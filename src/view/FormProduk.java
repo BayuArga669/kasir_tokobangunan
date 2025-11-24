@@ -200,7 +200,8 @@ public class FormProduk extends JFrame {
         panelSearch.add(btnHapus);
         
         // Table
-        String[] columns = {"ID", "Nama Produk", "Kategori", "Satuan Dasar", "Stok", "Jumlah Satuan Jual"};
+        String[] columns = {"ID", "Nama Produk", "Kategori", "Satuan Dasar", "Stok", "Harga Beli", "Jumlah Satuan"};
+
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -212,12 +213,13 @@ public class FormProduk extends JFrame {
         tableProduk.setRowHeight(28);
         tableProduk.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tableProduk.getColumnModel().getColumn(0).setPreferredWidth(50);
-        tableProduk.getColumnModel().getColumn(1).setPreferredWidth(250);
-        tableProduk.getColumnModel().getColumn(2).setPreferredWidth(120);
-        tableProduk.getColumnModel().getColumn(3).setPreferredWidth(100);
+        tableProduk.getColumnModel().getColumn(1).setPreferredWidth(200);
+        tableProduk.getColumnModel().getColumn(2).setPreferredWidth(100);
+        tableProduk.getColumnModel().getColumn(3).setPreferredWidth(90);
         tableProduk.getColumnModel().getColumn(4).setPreferredWidth(80);
-        tableProduk.getColumnModel().getColumn(5).setPreferredWidth(120);
-        
+        tableProduk.getColumnModel().getColumn(5).setPreferredWidth(100); // Harga Beli
+        tableProduk.getColumnModel().getColumn(6).setPreferredWidth(100); // Jumlah Satuan
+
         // Double click to edit
         tableProduk.addMouseListener(new MouseAdapter() {
             @Override
@@ -264,7 +266,7 @@ public class FormProduk extends JFrame {
     public void loadData() {
         tableModel.setRowCount(0);
         List<Produk> produkList = Produk.getAllProduk();
-        
+
         for (Produk p : produkList) {
             Object[] row = {
                 p.getId(),
@@ -272,6 +274,7 @@ public class FormProduk extends JFrame {
                 p.getNamaKategori(),
                 p.getSatuanDasar(),
                 String.format("%.2f", p.getStokDasar()),
+                String.format("Rp %,.0f", p.getHargaBeli()), // TAMBAH INI
                 p.getDaftarSatuan().size() + " satuan"
             };
             tableModel.addRow(row);
@@ -284,10 +287,10 @@ public class FormProduk extends JFrame {
             loadData();
             return;
         }
-        
+
         tableModel.setRowCount(0);
         List<Produk> produkList = Produk.searchProduk(keyword);
-        
+
         for (Produk p : produkList) {
             Object[] row = {
                 p.getId(),
@@ -295,11 +298,13 @@ public class FormProduk extends JFrame {
                 p.getNamaKategori(),
                 p.getSatuanDasar(),
                 String.format("%.2f", p.getStokDasar()),
+                String.format("Rp %,.0f", p.getHargaBeli()), // TAMBAH INI
                 p.getDaftarSatuan().size() + " satuan"
             };
             tableModel.addRow(row);
         }
     }
+
     
     private void simpanProduk() {
         // Validasi

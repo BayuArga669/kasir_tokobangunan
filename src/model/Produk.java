@@ -16,6 +16,8 @@ public class Produk {
     private String satuanDasar;
     private double stokDasar;
     private List<SatuanJual> daftarSatuan;
+    private double hargaBeli;
+
     
     // Constructors
     public Produk() {
@@ -28,6 +30,10 @@ public class Produk {
     }
 
     // Getters & Setters
+    
+    public double getHargaBeli() { return hargaBeli; }
+    public void setHargaBeli(double hargaBeli) { this.hargaBeli = hargaBeli; }
+    
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
     
@@ -138,7 +144,6 @@ public static List<Produk> getAllProduk() {
         stmt = conn.createStatement();
         rs = stmt.executeQuery(sql);
         
-        // Baca semua data produk dulu sebelum ResultSet ditutup
         while (rs.next()) {
             Produk p = new Produk();
             p.setId(rs.getInt("id"));
@@ -147,15 +152,14 @@ public static List<Produk> getAllProduk() {
             p.setNamaKategori(rs.getString("nama_kategori"));
             p.setSatuanDasar(rs.getString("satuan_dasar"));
             p.setStokDasar(rs.getDouble("stok_dasar"));
+            p.setHargaBeli(rs.getDouble("harga_beli")); // TAMBAH INI
             
             produkList.add(p);
         }
         
-        // Tutup ResultSet dulu
         rs.close();
         stmt.close();
         
-        // Sekarang load satuan jual untuk setiap produk
         for (Produk p : produkList) {
             p.setDaftarSatuan(SatuanJual.getSatuanByProdukId(p.getId()));
         }
@@ -164,11 +168,9 @@ public static List<Produk> getAllProduk() {
         System.err.println("Error get all produk: " + e.getMessage());
         e.printStackTrace();
     } finally {
-        // Cleanup jika ada yang belum tertutup
         try {
             if (rs != null && !rs.isClosed()) rs.close();
             if (stmt != null && !stmt.isClosed()) stmt.close();
-            // Jangan tutup connection karena pakai singleton pattern
         } catch (SQLException e) {
             System.err.println("Error closing resources: " + e.getMessage());
         }
@@ -224,12 +226,11 @@ public static Produk getProdukById(int id) {
             p.setNamaKategori(rs.getString("nama_kategori"));
             p.setSatuanDasar(rs.getString("satuan_dasar"));
             p.setStokDasar(rs.getDouble("stok_dasar"));
+            p.setHargaBeli(rs.getDouble("harga_beli")); // TAMBAH INI
             
-            // Tutup ResultSet dulu sebelum load satuan
             rs.close();
             ps.close();
             
-            // Load satuan jual
             p.setDaftarSatuan(SatuanJual.getSatuanByProdukId(p.getId()));
             
             return p;
@@ -249,6 +250,7 @@ public static Produk getProdukById(int id) {
     
     return null;
 }
+
 
 /**
  * Search produk by nama
@@ -270,7 +272,6 @@ public static List<Produk> searchProduk(String keyword) {
         ps.setString(1, "%" + keyword + "%");
         rs = ps.executeQuery();
         
-        // Baca semua data produk dulu
         while (rs.next()) {
             Produk p = new Produk();
             p.setId(rs.getInt("id"));
@@ -279,15 +280,14 @@ public static List<Produk> searchProduk(String keyword) {
             p.setNamaKategori(rs.getString("nama_kategori"));
             p.setSatuanDasar(rs.getString("satuan_dasar"));
             p.setStokDasar(rs.getDouble("stok_dasar"));
+            p.setHargaBeli(rs.getDouble("harga_beli")); // TAMBAH INI
             
             produkList.add(p);
         }
         
-        // Tutup ResultSet dulu
         rs.close();
         ps.close();
         
-        // Load satuan jual untuk setiap produk
         for (Produk p : produkList) {
             p.setDaftarSatuan(SatuanJual.getSatuanByProdukId(p.getId()));
         }

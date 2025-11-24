@@ -274,8 +274,9 @@ public class AdminDashboard extends JFrame {
     }
     
     private void openBarangMasuk() {
-        new FormBarangMasuk(this, currentUser).setVisible(true);
+        new FormTambahStok(this, currentUser).setVisible(true);
     }
+
     
     private void openStokOpname() {
         new FormStokOpname(this, currentUser).setVisible(true);
@@ -310,9 +311,9 @@ public class AdminDashboard extends JFrame {
     }
     
     private void openPengaturan() {
-        JOptionPane.showMessageDialog(this, "Menu Pengaturan");
-    }
-    
+      openManajemenUser(); // Arahkan ke form user
+  }
+
     private void openManajemenUser() {
         new FormManajemenUser(this).setVisible(true);
     }
