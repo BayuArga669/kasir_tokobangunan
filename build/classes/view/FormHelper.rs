@@ -7,6 +7,4 @@ view.FormInfoToko
 view.FormGantiPassword
 view.FormLaporanLaba
 view.FormRiwayatTransaksi
-view.FormBarangMasuk
 view.FormStokOpname
-view.FormManajemenUser

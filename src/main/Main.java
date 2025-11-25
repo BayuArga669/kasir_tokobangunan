@@ -1,8 +1,8 @@
 package main;
 
-import view.LoginForm;
-import config.DatabaseConfig;
+import view.SplashScreen;
 import javax.swing.*;
+import javax.swing.UIManager.LookAndFeelInfo;
 
 /**
  * Main Application Entry Point
@@ -14,48 +14,25 @@ import javax.swing.*;
 public class Main {
     
     public static void main(String[] args) {
-        // Set Look and Feel to System default
+        // Set Look and Feel modern (Nimbus)
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
         } catch (Exception e) {
-            System.err.println("Error setting look and feel: " + e.getMessage());
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception ex) {
+                System.err.println("Error setting look and feel: " + ex.getMessage());
+            }
         }
         
-        // Test database connection
-        System.out.println("=================================");
-        System.out.println("APLIKASI KASIR TOKO BANGUNAN");
-        System.out.println("=================================");
-        System.out.println("Testing database connection...");
-        
-        if (DatabaseConfig.testConnection()) {
-            System.out.println("✓ Database connected successfully!");
-            System.out.println("=================================\n");
-            
-            // Launch Login Form
-            SwingUtilities.invokeLater(() -> {
-                new LoginForm().setVisible(true);
-            });
-            
-        } else {
-            System.err.println("✗ Database connection failed!");
-            System.err.println("Please check:");
-            System.err.println("1. MySQL Server is running");
-            System.err.println("2. Database 'kasir_toko_bangunan' exists");
-            System.err.println("3. Username and password in DatabaseConfig.java");
-            System.err.println("=================================\n");
-            
-            // Show error dialog
-            JOptionPane.showMessageDialog(null,
-                "Gagal koneksi ke database!\n\n" +
-                "Pastikan:\n" +
-                "1. MySQL Server sudah berjalan\n" +
-                "2. Database 'kasir_toko_bangunan' sudah dibuat\n" +
-                "3. Username dan password di DatabaseConfig.java benar\n\n" +
-                "Aplikasi akan ditutup.",
-                "Error Database",
-                JOptionPane.ERROR_MESSAGE);
-            
-            System.exit(1);
-        }
+        // Jalankan SplashScreen — jangan panggil setVisible dari sini!
+        SwingUtilities.invokeLater(() -> {
+            new SplashScreen().startLoading();
+        });
     }
 }

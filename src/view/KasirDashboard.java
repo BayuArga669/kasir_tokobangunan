@@ -75,15 +75,15 @@ public class KasirDashboard extends JFrame {
         );
         
         // Card 2: Laporan Shift
-        JPanel cardLaporan = createDashboardCard(
-            "LAPORAN SHIFT",
-            "Lihat penjualan shift Anda",
-            new Color(52, 152, 219),
-            e -> openLaporanShift()
-        );
-        
+//        JPanel cardLaporan = createDashboardCard(
+//            "LAPORAN SHIFT",
+//            "Lihat penjualan shift Anda",
+//            new Color(52, 152, 219),
+//            e -> openLaporanShift()
+//        );
+//        
         panelContent.add(cardTransaksi);
-        panelContent.add(cardLaporan);
+//        panelContent.add(cardLaporan);
         
         // Footer Panel
         JPanel panelFooter = new JPanel();
@@ -111,14 +111,14 @@ public class KasirDashboard extends JFrame {
         JMenuItem itemPenjualan = new JMenuItem("Penjualan Baru");
         JMenuItem itemRiwayat = new JMenuItem("Riwayat Transaksi Saya");
         itemPenjualan.addActionListener(e -> openTransaksi());
-        itemRiwayat.addActionListener(e -> openRiwayatTransaksiKasir());
+//        itemRiwayat.addActionListener(e -> openRiwayatTransaksiKasir());
         menuTransaksi.add(itemPenjualan);
         menuTransaksi.add(itemRiwayat);
         
         // Menu Laporan
         JMenu menuLaporan = new JMenu("Laporan");
         JMenuItem itemLapShift = new JMenuItem("Laporan Shift Saya");
-        itemLapShift.addActionListener(e -> openLaporanShift());
+//        itemLapShift.addActionListener(e -> openLaporanShift());
         menuLaporan.add(itemLapShift);
         
         // Menu Akun
@@ -127,7 +127,7 @@ public class KasirDashboard extends JFrame {
         JMenuItem itemGantiPassword = new JMenuItem("Ganti Password");
         JMenuItem itemLogout = new JMenuItem("Logout");
         itemProfile.addActionListener(e -> openProfile());
-        itemGantiPassword.addActionListener(e -> openGantiPassword());
+//        itemGantiPassword.addActionListener(e -> openGantiPassword());
         itemLogout.addActionListener(e -> logout());
         menuAkun.add(itemProfile);
         menuAkun.add(itemGantiPassword);
@@ -199,13 +199,13 @@ public class KasirDashboard extends JFrame {
         new FormTransaksi(this, currentUser).setVisible(true);
     }
     
-    private void openRiwayatTransaksiKasir() {
-        new FormRiwayatTransaksi(this, currentUser).setVisible(true);
-    }
+//    private void openRiwayatTransaksiKasir() {
+//        new FormRiwayatTransaksi(this, currentUser).setVisible(true);
+//    }
     
-    private void openLaporanShift() {
-        new FormLaporanShift(this, currentUser).setVisible(true);
-    }
+//    private void openLaporanShift() {
+//        new FormLaporanShift(this, currentUser).setVisible(true);
+//    }
     
     private void openProfile() {
         JOptionPane.showMessageDialog(this,
@@ -216,9 +216,9 @@ public class KasirDashboard extends JFrame {
             JOptionPane.INFORMATION_MESSAGE);
     }
     
-    private void openGantiPassword() {
-        new FormGantiPassword(this, currentUser).setVisible(true);
-    }
+//    private void openGantiPassword() {
+//        new FormGantiPassword(this, currentUser).setVisible(true);
+//    }
     
     private void logout() {
         int confirm = JOptionPane.showConfirmDialog(this,

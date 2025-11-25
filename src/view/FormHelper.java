@@ -68,78 +68,78 @@ class FormKategori extends JDialog {
 /**
  * Form Barang Masuk (Restock)
  */
-class FormBarangMasuk extends JDialog {
-    private User currentUser;
-    private JComboBox<Produk> cmbProduk;
-    private JTextField txtJumlah, txtHargaBeli;
+//class FormBarangMasuk extends JDialog {
+//    private User currentUser;
+//    private JComboBox<Produk> cmbProduk;
+//    private JTextField txtJumlah, txtHargaBeli;
+//    
+//    public FormBarangMasuk(JFrame parent, User user) {
+//        super(parent, "Input Barang Masuk", true);
+//        this.currentUser = user;
+//        initComponents();
+//        setLocationRelativeTo(parent);
+//    }
     
-    public FormBarangMasuk(JFrame parent, User user) {
-        super(parent, "Input Barang Masuk", true);
-        this.currentUser = user;
-        initComponents();
-        setLocationRelativeTo(parent);
-    }
-    
-    private void initComponents() {
-        setSize(500, 300);
-        setLayout(new BorderLayout());
-        
-        JPanel panelForm = new JPanel(new GridLayout(4, 2, 10, 15));
-        panelForm.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        
-        panelForm.add(new JLabel("Produk:"));
-        cmbProduk = new JComboBox<>();
-        loadProduk();
-        panelForm.add(cmbProduk);
-        
-        panelForm.add(new JLabel("Jumlah Masuk:"));
-        txtJumlah = new JTextField();
-        panelForm.add(txtJumlah);
-        
-        panelForm.add(new JLabel("Harga Beli/Unit:"));
-        txtHargaBeli = new JTextField();
-        panelForm.add(txtHargaBeli);
-        
-        JPanel panelButton = new JPanel(new FlowLayout());
-        JButton btnSimpan = new JButton("SIMPAN");
-        btnSimpan.setBackground(new Color(46, 204, 113));
-        btnSimpan.setForeground(Color.WHITE);
-        btnSimpan.addActionListener(e -> simpanBarangMasuk());
-        
-        JButton btnBatal = new JButton("BATAL");
-        btnBatal.addActionListener(e -> dispose());
-        
-        panelButton.add(btnSimpan);
-        panelButton.add(btnBatal);
-        
-        add(panelForm, BorderLayout.CENTER);
-        add(panelButton, BorderLayout.SOUTH);
-    }
-    
-    private void loadProduk() {
-        List<Produk> produkList = Produk.getAllProduk();
-        for (Produk p : produkList) {
-            cmbProduk.addItem(p);
-        }
-    }
-    
-    private void simpanBarangMasuk() {
-        try {
-            Produk produk = (Produk) cmbProduk.getSelectedItem();
-            double jumlah = Double.parseDouble(txtJumlah.getText());
-            double hargaBeli = Double.parseDouble(txtHargaBeli.getText());
-            
-            // Update stok
-            double stokBaru = produk.getStokDasar() + jumlah;
-            if (Produk.updateStok(produk.getId(), stokBaru)) {
-                JOptionPane.showMessageDialog(this, "Barang masuk berhasil dicatat!");
-                dispose();
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Data tidak valid!");
-        }
-    }
-}
+//    private void initComponents() {
+//        setSize(500, 300);
+//        setLayout(new BorderLayout());
+//        
+//        JPanel panelForm = new JPanel(new GridLayout(4, 2, 10, 15));
+//        panelForm.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+//        
+//        panelForm.add(new JLabel("Produk:"));
+//        cmbProduk = new JComboBox<>();
+//        loadProduk();
+//        panelForm.add(cmbProduk);
+//        
+//        panelForm.add(new JLabel("Jumlah Masuk:"));
+//        txtJumlah = new JTextField();
+//        panelForm.add(txtJumlah);
+//        
+//        panelForm.add(new JLabel("Harga Beli/Unit:"));
+//        txtHargaBeli = new JTextField();
+//        panelForm.add(txtHargaBeli);
+//        
+//        JPanel panelButton = new JPanel(new FlowLayout());
+//        JButton btnSimpan = new JButton("SIMPAN");
+//        btnSimpan.setBackground(new Color(46, 204, 113));
+//        btnSimpan.setForeground(Color.WHITE);
+//        btnSimpan.addActionListener(e -> simpanBarangMasuk());
+//        
+//        JButton btnBatal = new JButton("BATAL");
+//        btnBatal.addActionListener(e -> dispose());
+//        
+//        panelButton.add(btnSimpan);
+//        panelButton.add(btnBatal);
+//        
+//        add(panelForm, BorderLayout.CENTER);
+//        add(panelButton, BorderLayout.SOUTH);
+//    }
+//    
+//    private void loadProduk() {
+//        List<Produk> produkList = Produk.getAllProduk();
+//        for (Produk p : produkList) {
+//            cmbProduk.addItem(p);
+//        }
+//    }
+//    
+//    private void simpanBarangMasuk() {
+//        try {
+//            Produk produk = (Produk) cmbProduk.getSelectedItem();
+//            double jumlah = Double.parseDouble(txtJumlah.getText());
+//            double hargaBeli = Double.parseDouble(txtHargaBeli.getText());
+//            
+//            // Update stok
+//            double stokBaru = produk.getStokDasar() + jumlah;
+//            if (Produk.updateStok(produk.getId(), stokBaru)) {
+//                JOptionPane.showMessageDialog(this, "Barang masuk berhasil dicatat!");
+//                dispose();
+//            }
+//        } catch (Exception e) {
+//            JOptionPane.showMessageDialog(this, "Data tidak valid!");
+//        }
+//    }
+//}
 
 /**
  * Form Stok Opname
@@ -339,32 +339,32 @@ class FormRiwayatTransaksi extends JDialog {
 /**
  * Form Laporan
  */
-class FormLaporanPenjualan extends JDialog {
-    public FormLaporanPenjualan(JFrame parent) {
-        super(parent, "Laporan Penjualan", true);
-        setSize(800, 600);
-        setLocationRelativeTo(parent);
-        JOptionPane.showMessageDialog(this, "Laporan Penjualan");
-    }
-}
+//class FormLaporanPenjualan extends JDialog {
+//    public FormLaporanPenjualan(JFrame parent) {
+//        super(parent, "Laporan Penjualan", true);
+//        setSize(800, 600);
+//        setLocationRelativeTo(parent);
+//        JOptionPane.showMessageDialog(this, "Laporan Penjualan");
+//    }
+//}
 
-class FormLaporanLaba extends JDialog {
-    public FormLaporanLaba(JFrame parent) {
-        super(parent, "Laporan Laba", true);
-        setSize(800, 600);
-        setLocationRelativeTo(parent);
-        JOptionPane.showMessageDialog(this, "Laporan Laba");
-    }
-}
+//class FormLaporanLaba extends JDialog {
+//    public FormLaporanLaba(JFrame parent) {
+//        super(parent, "Laporan Laba", true);
+//        setSize(800, 600);
+//        setLocationRelativeTo(parent);
+//        JOptionPane.showMessageDialog(this, "Laporan Laba");
+//    }
+//}
 
-class FormLaporanStok extends JDialog {
-    public FormLaporanStok(JFrame parent) {
-        super(parent, "Laporan Stok", true);
-        setSize(800, 600);
-        setLocationRelativeTo(parent);
-        JOptionPane.showMessageDialog(this, "Laporan Stok Menipis");
-    }
-}
+//class FormLaporanStok extends JDialog {
+//    public FormLaporanStok(JFrame parent) {
+//        super(parent, "Laporan Stok", true);
+//        setSize(800, 600);
+//        setLocationRelativeTo(parent);
+//        JOptionPane.showMessageDialog(this, "Laporan Stok Menipis");
+//    }
+//}
 
 class FormLaporanShift extends JDialog {
     public FormLaporanShift(JFrame parent, User user) {

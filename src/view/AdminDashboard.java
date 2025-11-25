@@ -170,7 +170,7 @@ public class AdminDashboard extends JFrame {
         JMenuItem itemLapStok = new JMenuItem("Laporan Stok");
         itemLapPenjualan.addActionListener(e -> openLaporanPenjualan());
         itemLapLaba.addActionListener(e -> openLaporanLaba());
-        itemLapStok.addActionListener(e -> openLaporanStok());
+//      itemLapStok.addActionListener(e -> openLaporanStok());
         menuLaporan.add(itemLapPenjualan);
         menuLaporan.add(itemLapLaba);
         menuLaporan.add(itemLapStok);
@@ -306,9 +306,9 @@ public class AdminDashboard extends JFrame {
         new FormLaporanLaba(this).setVisible(true);
     }
     
-    private void openLaporanStok() {
-        new FormLaporanStok(this).setVisible(true);
-    }
+//    private void openLaporanStok() {
+//        new FormLaporanStok(this).setVisible(true);
+//    }
     
     private void openPengaturan() {
       new FormManajemenUser(this).setVisible(true);

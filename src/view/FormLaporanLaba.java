@@ -87,7 +87,7 @@ public class FormLaporanLaba extends JFrame {
         panel.setPreferredSize(new Dimension(0, 80));
         panel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
         
-        JLabel lblTitle = new JLabel("💰 LAPORAN LABA RUGI");
+        JLabel lblTitle = new JLabel("💹 LAPORAN LABA RUGI");
         lblTitle.setFont(new Font("Arial", Font.BOLD, 24));
         lblTitle.setForeground(Color.WHITE);
         
