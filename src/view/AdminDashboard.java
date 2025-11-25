@@ -144,13 +144,13 @@ public class AdminDashboard extends JFrame {
         // Menu Stok
         JMenu menuStok = new JMenu("Manajemen Stok");
         JMenuItem itemBarangMasuk = new JMenuItem("Barang Masuk");
-        JMenuItem itemStokOpname = new JMenuItem("Stok Opname");
+//        JMenuItem itemStokOpname = new JMenuItem("Stok Opname");
         JMenuItem itemLihatStok = new JMenuItem("Lihat Stok");
         itemBarangMasuk.addActionListener(e -> openBarangMasuk());
-        itemStokOpname.addActionListener(e -> openStokOpname());
+//        itemStokOpname.addActionListener(e -> openStokOpname());
         itemLihatStok.addActionListener(e -> openLihatStok());
         menuStok.add(itemBarangMasuk);
-        menuStok.add(itemStokOpname);
+//        menuStok.add(itemStokOpname);
         menuStok.addSeparator();
         menuStok.add(itemLihatStok);
         
@@ -165,35 +165,35 @@ public class AdminDashboard extends JFrame {
         
         // Menu Laporan
         JMenu menuLaporan = new JMenu("Laporan");
-        JMenuItem itemLapPenjualan = new JMenuItem("Laporan Penjualan");
+//        JMenuItem itemLapPenjualan = new JMenuItem("Laporan Penjualan");
         JMenuItem itemLapLaba = new JMenuItem("Laporan Laba");
-        JMenuItem itemLapStok = new JMenuItem("Laporan Stok");
-        itemLapPenjualan.addActionListener(e -> openLaporanPenjualan());
+//        JMenuItem itemLapStok = new JMenuItem("Laporan Stok");
+//        itemLapPenjualan.addActionListener(e -> openLaporanPenjualan());
         itemLapLaba.addActionListener(e -> openLaporanLaba());
 //      itemLapStok.addActionListener(e -> openLaporanStok());
-        menuLaporan.add(itemLapPenjualan);
+//        menuLaporan.add(itemLapPenjualan);
         menuLaporan.add(itemLapLaba);
-        menuLaporan.add(itemLapStok);
+//        menuLaporan.add(itemLapStok);
         
         // Menu Pengaturan
         JMenu menuPengaturan = new JMenu("Pengaturan");
         JMenuItem itemUser = new JMenuItem("Manajemen User");
-        JMenuItem itemToko = new JMenuItem("Info Toko");
+//        JMenuItem itemToko = new JMenuItem("Info Toko");
         itemUser.addActionListener(e -> openManajemenUser());
-        itemToko.addActionListener(e -> openInfoToko());
+//        itemToko.addActionListener(e -> openInfoToko());
         menuPengaturan.add(itemUser);
-        menuPengaturan.add(itemToko);
+//        menuPengaturan.add(itemToko);
         
         // Menu Akun
         JMenu menuAkun = new JMenu("Akun");
         JMenuItem itemProfile = new JMenuItem("Profil Saya");
-        JMenuItem itemGantiPassword = new JMenuItem("Ganti Password");
+//        JMenuItem itemGantiPassword = new JMenuItem("Ganti Password");
         JMenuItem itemLogout = new JMenuItem("Logout");
         itemProfile.addActionListener(e -> openProfile());
-        itemGantiPassword.addActionListener(e -> openGantiPassword());
+//        itemGantiPassword.addActionListener(e -> openGantiPassword());
         itemLogout.addActionListener(e -> logout());
         menuAkun.add(itemProfile);
-        menuAkun.add(itemGantiPassword);
+//        menuAkun.add(itemGantiPassword);
         menuAkun.addSeparator();
         menuAkun.add(itemLogout);
         
