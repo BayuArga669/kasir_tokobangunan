@@ -83,18 +83,18 @@ public class AdminDashboard extends JFrame {
             e -> openManajemenStok()
         );
         
-        // Card 3: Transaksi
-//        JPanel cardTransaksi = createDashboardCard(
-//            "Transaksi",
-//            "Proses penjualan kasir",
-//            new Color(155, 89, 182),
-//            e -> openTransaksi()
-//        );
+        // Card 3: Laporan Penjualan (BARU DITAMBAHKAN)
+        JPanel cardLapPenjualan = createDashboardCard(
+            "Laporan Penjualan",
+            "Detail transaksi harian",
+            new Color(142, 68, 173),
+            e -> openLaporanPenjualan()
+        );
         
-        // Card 4: Laporan
+        // Card 4: Laporan Laba
         JPanel cardLaporan = createDashboardCard(
-            "Laporan",
-            "Penjualan, laba & stok",
+            "Laporan Laba",
+            "Analisis keuntungan & rugi",
             new Color(230, 126, 34),
             e -> openLaporan()
         );
@@ -110,14 +110,14 @@ public class AdminDashboard extends JFrame {
         // Card 6: Pengaturan
         JPanel cardPengaturan = createDashboardCard(
             "Pengaturan",
-            "User & info toko",
+            "Manajemen user & sistem",
             new Color(52, 73, 94),
             e -> openPengaturan()
         );
         
         panelContent.add(cardProduk);
         panelContent.add(cardStok);
-//        panelContent.add(cardTransaksi);
+        panelContent.add(cardLapPenjualan); // ← BARU
         panelContent.add(cardLaporan);
         panelContent.add(cardKategori);
         panelContent.add(cardPengaturan);
@@ -144,13 +144,9 @@ public class AdminDashboard extends JFrame {
         // Menu Stok
         JMenu menuStok = new JMenu("Manajemen Stok");
         JMenuItem itemBarangMasuk = new JMenuItem("Barang Masuk");
-//        JMenuItem itemStokOpname = new JMenuItem("Stok Opname");
         JMenuItem itemLihatStok = new JMenuItem("Lihat Stok");
         itemBarangMasuk.addActionListener(e -> openBarangMasuk());
-//        itemStokOpname.addActionListener(e -> openStokOpname());
-//        itemLihatStok.addActionListener(e -> openLihatStok());
         menuStok.add(itemBarangMasuk);
-//        menuStok.add(itemStokOpname);
         menuStok.addSeparator();
         menuStok.add(itemLihatStok);
         
@@ -165,35 +161,26 @@ public class AdminDashboard extends JFrame {
         
         // Menu Laporan
         JMenu menuLaporan = new JMenu("Laporan");
-//        JMenuItem itemLapPenjualan = new JMenuItem("Laporan Penjualan");
+        JMenuItem itemLapPenjualan = new JMenuItem("Laporan Penjualan");
         JMenuItem itemLapLaba = new JMenuItem("Laporan Laba");
-//        JMenuItem itemLapStok = new JMenuItem("Laporan Stok");
-//        itemLapPenjualan.addActionListener(e -> openLaporanPenjualan());
+        itemLapPenjualan.addActionListener(e -> openLaporanPenjualan());
         itemLapLaba.addActionListener(e -> openLaporanLaba());
-//      itemLapStok.addActionListener(e -> openLaporanStok());
-//        menuLaporan.add(itemLapPenjualan);
+        menuLaporan.add(itemLapPenjualan);
         menuLaporan.add(itemLapLaba);
-//        menuLaporan.add(itemLapStok);
         
         // Menu Pengaturan
         JMenu menuPengaturan = new JMenu("Pengaturan");
         JMenuItem itemUser = new JMenuItem("Manajemen User");
-//        JMenuItem itemToko = new JMenuItem("Info Toko");
         itemUser.addActionListener(e -> openManajemenUser());
-//        itemToko.addActionListener(e -> openInfoToko());
         menuPengaturan.add(itemUser);
-//        menuPengaturan.add(itemToko);
         
         // Menu Akun
         JMenu menuAkun = new JMenu("Akun");
         JMenuItem itemProfile = new JMenuItem("Profil Saya");
-//        JMenuItem itemGantiPassword = new JMenuItem("Ganti Password");
         JMenuItem itemLogout = new JMenuItem("Logout");
         itemProfile.addActionListener(e -> openProfile());
-//        itemGantiPassword.addActionListener(e -> openGantiPassword());
         itemLogout.addActionListener(e -> logout());
         menuAkun.add(itemProfile);
-//        menuAkun.add(itemGantiPassword);
         menuAkun.addSeparator();
         menuAkun.add(itemLogout);
         
@@ -276,16 +263,7 @@ public class AdminDashboard extends JFrame {
     private void openBarangMasuk() {
         new FormTambahStok(this, currentUser).setVisible(true);
     }
-
     
-//    private void openStokOpname() {
-//        new FormStokOpname(this, currentUser).setVisible(true);
-//    }
-//    
-//    private void openLihatStok() {
-//        new FormLihatStok(this).setVisible(true);
-//    }
-//    
     private void openTransaksi() {
         new FormTransaksi(this, currentUser).setVisible(true);
     }
@@ -306,19 +284,13 @@ public class AdminDashboard extends JFrame {
         new FormLaporanLaba(this).setVisible(true);
     }
     
-//    private void openLaporanStok() {
-//        new FormLaporanStok(this).setVisible(true);
-//    }
-    
     private void openPengaturan() {
-      new FormManajemenUser(this).setVisible(true);
-  }
+        new FormManajemenUser(this).setVisible(true);
+    }
 
     private void openManajemenUser() {
         new FormManajemenUser(this).setVisible(true);
     }
-    
-//6
     
     private void openProfile() {
         JOptionPane.showMessageDialog(this,
@@ -329,10 +301,6 @@ public class AdminDashboard extends JFrame {
             JOptionPane.INFORMATION_MESSAGE);
     }
     
-//    private void openGantiPassword() {
-//        new FormGantiPassword(this, currentUser).setVisible(true);
-//    }
-//    
     private void logout() {
         int confirm = JOptionPane.showConfirmDialog(this,
             "Yakin ingin logout?",

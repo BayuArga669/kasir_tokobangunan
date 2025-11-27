@@ -4,21 +4,30 @@ import model.*;
 import javax.swing.*;
 import javax.swing.table.*;
 import com.toedter.calendar.JDateChooser;
+// Pastikan Anda punya JCalendar di classpath — biasanya via jcalendar-x.x.jar
+import java.awt.*;
+import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.text.SimpleDateFormat;
+import java.util.List;           // hanya List
+import java.util.ArrayList;     // karena Anda pakai new ArrayList<>()
+import java.util.Calendar;      // karena Anda pakai Calendar.getInstance()
+import java.util.Date;
+import java.util.Map;           // karena Anda pakai Map<Integer, ...>
+import java.util.HashMap;  
 import org.jfree.chart.*;
 import org.jfree.chart.plot.*;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
 import org.jfree.chart.renderer.category.BarRenderer;
-import java.awt.*;
-import java.awt.event.*;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.List;
 import org.jfree.chart.axis.CategoryAxis;
+import model.DetailTransaksi; 
 import org.jfree.chart.axis.CategoryLabelPositions;
 
 /**
  * Form Laporan Laba Rugi - Analisis Keuntungan dengan Grafik
+ * ✅ Fitur: dateTo tidak bisa sebelum dateFrom, dateFrom tidak bisa setelah dateTo
  */
 public class FormLaporanLaba extends JFrame {
     
@@ -30,14 +39,17 @@ public class FormLaporanLaba extends JFrame {
     private JPanel chartPanel;
     private ChartPanel currentChartPanel;
     private boolean isPieChart = false;
-    private JPanel chartContentPanel; // Added to better manage chart content
-    
+    private JPanel chartContentPanel;
     private SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
     private Map<Integer, ProdukLaba> currentProdukLabaMap;
     
+    // 🔐 Flag untuk mencegah recursive update
+    private boolean updating = false;
+
     public FormLaporanLaba(JFrame parent) {
         initComponents();
         setDefaultPeriod();
+        setupDateConstraints(); // ⭐ Setup sinkronisasi tanggal di sini
         setLocationRelativeTo(parent);
     }
     
@@ -71,10 +83,9 @@ public class FormLaporanLaba extends JFrame {
         topPanel.add(filterPanel, BorderLayout.CENTER);
         topPanel.add(summaryPanel, BorderLayout.SOUTH);
         
-        // Create split pane with proper divider location
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         splitPane.setDividerLocation(750);
-        splitPane.setResizeWeight(0.6); // Give more space to the table
+        splitPane.setResizeWeight(0.6);
         splitPane.setLeftComponent(tablePanel);
         splitPane.setRightComponent(chartPanel);
         splitPane.setContinuousLayout(true);
@@ -152,23 +163,63 @@ public class FormLaporanLaba extends JFrame {
         btnDetail.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btnDetail.addActionListener(e -> openAnalisisMargin());
         
-//        btnExport = new JButton("EXPORT");
-//        btnExport.setPreferredSize(new Dimension(120, 35));
-//        btnExport.setBackground(new Color(230, 126, 34));
-//        btnExport.setForeground(Color.WHITE);
-//        btnExport.setFocusPainted(false);
-//        btnExport.setFont(new Font("Segoe UI", Font.BOLD, 12));
-////        btnExport.addActionListener(e -> exportReport());
-        
         panel.add(lblPeriode);
         panel.add(dateFrom);
         panel.add(lblSampai);
         panel.add(dateTo);
         panel.add(btnTampilkan);
         panel.add(btnDetail);
-//        panel.add(btnExport);
         
         return panel;
+    }
+    
+    // ⭐ SINKRONISASI TANGGAL: dateTo ≥ dateFrom, dateFrom ≤ dateTo
+    private void setupDateConstraints() {
+        // Listener untuk dateFrom: saat berubah, set min dateTo = dateFrom
+        dateFrom.getDateEditor().addPropertyChangeListener("date", new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                if (updating) return;
+                updating = true;
+                try {
+                    Date dari = dateFrom.getDate();
+                    if (dari != null) {
+                        dateTo.setMinSelectableDate(dari);
+                        
+                        // Jika dateTo saat ini < dari, set dateTo = dari
+                        Date sampai = dateTo.getDate();
+                        if (sampai == null || sampai.before(dari)) {
+                            dateTo.setDate(dari);
+                        }
+                    }
+                } finally {
+                    updating = false;
+                }
+            }
+        });
+
+        // Listener untuk dateTo: saat berubah, set max dateFrom = dateTo
+        dateTo.getDateEditor().addPropertyChangeListener("date", new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                if (updating) return;
+                updating = true;
+                try {
+                    Date sampai = dateTo.getDate();
+                    if (sampai != null) {
+                        dateFrom.setMaxSelectableDate(sampai);
+                        
+                        // Jika dateFrom saat ini > sampai, set dateFrom = sampai
+                        Date dari = dateFrom.getDate();
+                        if (dari == null || dari.after(sampai)) {
+                            dateFrom.setDate(sampai);
+                        }
+                    }
+                } finally {
+                    updating = false;
+                }
+            }
+        });
     }
     
     private JPanel createSummaryPanel() {
@@ -179,15 +230,12 @@ public class FormLaporanLaba extends JFrame {
         JPanel panel = new JPanel(new GridLayout(1, 3, 15, 0));
         panel.setBackground(new Color(240, 242, 245));
         
-        // Card 1: Total Pendapatan
         lblTotalPendapatan = new JLabel("Rp 0");
         JPanel card1 = createSummaryCard("TOTAL PENDAPATAN", lblTotalPendapatan, new Color(52, 152, 219));
         
-        // Card 2: Total Modal
         lblTotalModal = new JLabel("Rp 0");
         JPanel card2 = createSummaryCard("TOTAL MODAL", lblTotalModal, new Color(231, 76, 60));
         
-        // Card 3: Laba Bersih
         lblLabaBersih = new JLabel("Rp 0");
         JPanel card3 = createSummaryCard("LABA BERSIH", lblLabaBersih, new Color(46, 204, 113));
         
@@ -212,7 +260,6 @@ public class FormLaporanLaba extends JFrame {
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBackground(Color.WHITE);
         
-        // Title
         JLabel lblTitle = new JLabel(title);
         lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblTitle.setForeground(new Color(100, 110, 120));
@@ -220,7 +267,6 @@ public class FormLaporanLaba extends JFrame {
         content.add(lblTitle);
         content.add(Box.createVerticalStrut(10));
         
-        // Value label
         valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         valueLabel.setForeground(bgColor);
         valueLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -264,7 +310,6 @@ public class FormLaporanLaba extends JFrame {
         tableLaba.getColumnModel().getColumn(5).setPreferredWidth(120);
         tableLaba.getColumnModel().getColumn(6).setPreferredWidth(100);
         
-        // Custom renderer untuk kolom Margin
         tableLaba.getColumnModel().getColumn(6).setCellRenderer(new MarginRenderer());
         
         JScrollPane scrollPane = new JScrollPane(tableLaba);
@@ -285,7 +330,6 @@ public class FormLaporanLaba extends JFrame {
         ));
         panel.setBackground(Color.WHITE);
         
-        // Tombol ganti tipe chart
         btnChartType = new JButton("Ganti ke Pie Chart");
         btnChartType.setFont(new Font("Segoe UI", Font.BOLD, 11));
         btnChartType.setBackground(new Color(52, 152, 219));
@@ -299,16 +343,10 @@ public class FormLaporanLaba extends JFrame {
         
         panel.add(btnPanel, BorderLayout.NORTH);
         
-        // Create a separate panel for chart content to better manage it
         chartContentPanel = new JPanel(new BorderLayout());
         chartContentPanel.setBackground(Color.WHITE);
         
-        // Default placeholder
-        JLabel lblPlaceholder = new JLabel("<html><center>" +
-            "<br><br>" +
-            "Klik tombol ANALISIS<br>" +
-            "untuk menampilkan grafik</center></html>",
-            SwingConstants.CENTER);
+        JLabel lblPlaceholder = new JLabel("<html><center><br><br>Klik tombol ANALISIS<br>untuk menampilkan grafik</center></html>", SwingConstants.CENTER);
         lblPlaceholder.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblPlaceholder.setForeground(Color.GRAY);
         
@@ -327,10 +365,7 @@ public class FormLaporanLaba extends JFrame {
     
     private void loadLaporan() {
         if (dateFrom.getDate() == null || dateTo.getDate() == null) {
-            JOptionPane.showMessageDialog(this,
-                "Pilih periode tanggal!",
-                "Validasi",
-                JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Pilih periode tanggal!", "Validasi", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -338,42 +373,33 @@ public class FormLaporanLaba extends JFrame {
         Date sampai = dateTo.getDate();
 
         tableLabaModel.setRowCount(0);
-
-        // Ambil semua transaksi dalam periode
-        List<Transaksi> transaksiList = Transaksi.getTransaksiByPeriode(dari, sampai);
-
-        // Map untuk menyimpan data per produk
         currentProdukLabaMap = new HashMap<>();
 
         double totalPendapatan = 0;
         double totalModal = 0;
 
+        List<Transaksi> transaksiList = Transaksi.getTransaksiByPeriode(dari, sampai);
+
         for (Transaksi t : transaksiList) {
             List<DetailTransaksi> details = Transaksi.getDetailTransaksi(t.getId());
-
             for (DetailTransaksi detail : details) {
                 int produkId = detail.getProdukId();
-
                 if (!currentProdukLabaMap.containsKey(produkId)) {
                     currentProdukLabaMap.put(produkId, new ProdukLaba(detail.getNamaProduk()));
                 }
 
                 ProdukLaba pl = currentProdukLabaMap.get(produkId);
-
-                // Ambil data produk untuk mendapatkan harga beli
                 Produk produk = Produk.getProdukById(produkId);
                 SatuanJual satuan = SatuanJual.getSatuanById(detail.getSatuanJualId());
 
-                // ✅ PERBAIKAN: Tambahkan pengecekan null
                 if (produk == null || satuan == null) {
                     System.err.println("Warning: Produk/Satuan tidak ditemukan untuk produk ID: " + produkId);
-                    // Gunakan harga beli default 0 jika produk tidak ditemukan
                     pl.qty += detail.getQty();
                     pl.satuan = detail.getNamaSatuan();
                     pl.pendapatan += detail.getSubtotal();
-                    pl.modal += 0; // Modal tidak bisa dihitung
+                    pl.modal += 0;
                     totalPendapatan += detail.getSubtotal();
-                    continue; // Skip ke item berikutnya
+                    continue;
                 }
 
                 double hargaBeliPerSatuan = produk.getHargaBeli() * satuan.getKonversiKeDasar();
@@ -389,7 +415,6 @@ public class FormLaporanLaba extends JFrame {
             }
         }
 
-        // Tampilkan di tabel
         for (ProdukLaba pl : currentProdukLabaMap.values()) {
             double laba = pl.pendapatan - pl.modal;
             double marginPersen = pl.modal > 0 ? (laba / pl.modal) * 100 : 0;
@@ -406,14 +431,12 @@ public class FormLaporanLaba extends JFrame {
             tableLabaModel.addRow(row);
         }
 
-        // Update summary
         double labaBersih = totalPendapatan - totalModal;
 
         lblTotalPendapatan.setText(String.format("Rp %,d", (long)totalPendapatan));
         lblTotalModal.setText(String.format("Rp %,d", (long)totalModal));
         lblLabaBersih.setText(String.format("Rp %,d", (long)labaBersih));
 
-        // Update chart
         updateChart();
     }
     
@@ -421,21 +444,10 @@ public class FormLaporanLaba extends JFrame {
         if (currentProdukLabaMap == null || currentProdukLabaMap.isEmpty()) {
             return;
         }
-        
-        // Clear the chart content panel
         chartContentPanel.removeAll();
-        
-        // Buat chart sesuai tipe
-        JFreeChart chart;
-        if (isPieChart) {
-            chart = createPieChart();
-        } else {
-            chart = createBarChart();
-        }
-        
+        JFreeChart chart = isPieChart ? createPieChart() : createBarChart();
         currentChartPanel = new ChartPanel(chart);
         currentChartPanel.setPreferredSize(new Dimension(450, 500));
-        
         chartContentPanel.add(currentChartPanel, BorderLayout.CENTER);
         chartContentPanel.revalidate();
         chartContentPanel.repaint();
@@ -444,22 +456,17 @@ public class FormLaporanLaba extends JFrame {
     private JFreeChart createBarChart() {
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         
-        // Sort berdasarkan laba tertinggi (ambil top 10)
         List<ProdukLaba> sortedList = new ArrayList<>(currentProdukLabaMap.values());
         sortedList.sort((a, b) -> Double.compare(b.pendapatan - b.modal, a.pendapatan - a.modal));
         
         int count = 0;
         for (ProdukLaba pl : sortedList) {
             if (count >= 10) break;
-            
             double laba = pl.pendapatan - pl.modal;
-            String namaProduk = pl.namaProduk.length() > 15 ? 
-                pl.namaProduk.substring(0, 15) + "..." : pl.namaProduk;
-            
+            String namaProduk = pl.namaProduk.length() > 15 ? pl.namaProduk.substring(0, 15) + "..." : pl.namaProduk;
             dataset.addValue(pl.pendapatan / 1000, "Pendapatan", namaProduk);
             dataset.addValue(pl.modal / 1000, "Modal", namaProduk);
             dataset.addValue(laba / 1000, "Laba", namaProduk);
-            
             count++;
         }
         
@@ -474,18 +481,16 @@ public class FormLaporanLaba extends JFrame {
             false
         );
         
-        // Styling
         chart.setBackgroundPaint(Color.WHITE);
         CategoryPlot plot = chart.getCategoryPlot();
         plot.setBackgroundPaint(new Color(248, 249, 250));
         plot.setRangeGridlinePaint(Color.GRAY);
         
         BarRenderer renderer = (BarRenderer) plot.getRenderer();
-        renderer.setSeriesPaint(0, new Color(52, 152, 219));  // Pendapatan - Biru
-        renderer.setSeriesPaint(1, new Color(231, 76, 60));   // Modal - Merah
-        renderer.setSeriesPaint(2, new Color(46, 204, 113));  // Laba - Hijau
+        renderer.setSeriesPaint(0, new Color(52, 152, 219));
+        renderer.setSeriesPaint(1, new Color(231, 76, 60));
+        renderer.setSeriesPaint(2, new Color(46, 204, 113));
         
-        // Rotate label kategori
         CategoryAxis domainAxis = plot.getDomainAxis();
         domainAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);
         
@@ -495,7 +500,6 @@ public class FormLaporanLaba extends JFrame {
     private JFreeChart createPieChart() {
         DefaultPieDataset dataset = new DefaultPieDataset();
         
-        // Sort berdasarkan laba tertinggi (ambil top 8 untuk pie chart)
         List<ProdukLaba> sortedList = new ArrayList<>(currentProdukLabaMap.values());
         sortedList.sort((a, b) -> Double.compare(b.pendapatan - b.modal, a.pendapatan - a.modal));
         
@@ -504,10 +508,8 @@ public class FormLaporanLaba extends JFrame {
         
         for (ProdukLaba pl : sortedList) {
             double laba = pl.pendapatan - pl.modal;
-            
             if (count < 8) {
-                String label = pl.namaProduk.length() > 15 ? 
-                    pl.namaProduk.substring(0, 15) + "..." : pl.namaProduk;
+                String label = pl.namaProduk.length() > 15 ? pl.namaProduk.substring(0, 15) + "..." : pl.namaProduk;
                 dataset.setValue(label, laba);
             } else {
                 otherLaba += laba;
@@ -527,14 +529,12 @@ public class FormLaporanLaba extends JFrame {
             false
         );
         
-        // Styling
         chart.setBackgroundPaint(Color.WHITE);
         PiePlot plot = (PiePlot) chart.getPlot();
         plot.setBackgroundPaint(new Color(248, 249, 250));
         plot.setOutlinePaint(null);
         plot.setLabelFont(new Font("Segoe UI", Font.PLAIN, 11));
         
-        // Custom colors
         Color[] colors = {
             new Color(46, 204, 113),
             new Color(52, 152, 219),
@@ -558,26 +558,13 @@ public class FormLaporanLaba extends JFrame {
     
     private void toggleChartType() {
         isPieChart = !isPieChart;
-        
-        if (isPieChart) {
-            btnChartType.setText("Ganti ke Bar Chart");
-        } else {
-            btnChartType.setText("Ganti ke Pie Chart");
-        }
-        
+        btnChartType.setText(isPieChart ? "Ganti ke Bar Chart" : "Ganti ke Pie Chart");
         updateChart();
     }
     
     private void openAnalisisMargin() {
         new FormAnalisisMargin(this).setVisible(true);
     }
-    
-//    private void exportReport() {
-//        JOptionPane.showMessageDialog(this,
-//            "Fitur Export akan segera hadir!",
-//            "Info",
-//            JOptionPane.INFORMATION_MESSAGE);
-//    }
     
     // Helper class
     class ProdukLaba {
@@ -592,19 +579,18 @@ public class FormLaporanLaba extends JFrame {
         }
     }
     
-    // Custom renderer untuk margin
     class MarginRenderer extends DefaultTableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {
             Component c = super.getTableCellRendererComponent(table, value, 
                 isSelected, hasFocus, row, column);
+            setHorizontalAlignment(CENTER);
             
             if (value != null) {
                 String marginStr = value.toString().replace("%", "");
                 try {
                     double margin = Double.parseDouble(marginStr);
-                    
                     if (!isSelected) {
                         if (margin > 40) {
                             c.setForeground(new Color(39, 174, 96));
@@ -618,12 +604,8 @@ public class FormLaporanLaba extends JFrame {
                             c.setFont(new Font("Segoe UI", Font.BOLD, 12));
                         }
                     }
-                } catch (Exception e) {
-                    c.setForeground(Color.BLACK);
-                }
+                } catch (Exception ignored) { }
             }
-            
-            setHorizontalAlignment(CENTER);
             return c;
         }
     }

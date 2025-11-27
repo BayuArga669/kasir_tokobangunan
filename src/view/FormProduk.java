@@ -3,13 +3,21 @@ package view;
 import model.*;
 import javax.swing.*;
 import javax.swing.table.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.util.List;
 import java.util.ArrayList;
 
 /**
- * Form Master Produk dengan CRUD Form di atas DataGrid - DENGAN HARGA BELI
+ * Form Master Produk dengan:
+ * ✅ LIVE SEARCH (otomatis saat ketik)
+ * ✅ INPUT ANGKA ONLY (Stok, Harga Beli, Konversi, Harga Jual)
+ * ✅ Harga beli disimpan & ditampilkan
  */
 public class FormProduk extends JFrame {
     
@@ -26,10 +34,14 @@ public class FormProduk extends JFrame {
     private JTable tableProduk;
     private DefaultTableModel tableModel;
     private JTextField txtSearch;
-    private JButton btnSearch, btnRefresh, btnKelolaHarga;
+    private JButton btnRefresh, btnKelolaHarga;
     
     private int selectedProdukId = -1;
-    
+
+    // ======== DEBOUNCE TIMER (untuk live search) ========
+    private Timer searchTimer;
+    private static final int SEARCH_DELAY = 300;
+
     public FormProduk(JFrame parent, User user) {
         this.parent = parent;
         this.currentUser = user;
@@ -114,6 +126,8 @@ public class FormProduk extends JFrame {
         gbc.gridx = 1; gbc.gridy = 2; gbc.weightx = 0.2;
         txtStok = new JTextField("0");
         txtStok.setPreferredSize(new Dimension(150, 30));
+        // ✅ Numeric only (desimal)
+        NumericDocumentFilter.applyTo(txtStok, true);
         panelFields.add(txtStok, gbc);
         
         gbc.gridx = 2; gbc.gridy = 2; gbc.weightx = 0.1;
@@ -124,6 +138,8 @@ public class FormProduk extends JFrame {
         gbc.gridx = 3; gbc.gridy = 2; gbc.weightx = 0.3;
         txtHargaBeli = new JTextField("0");
         txtHargaBeli.setPreferredSize(new Dimension(150, 30));
+        // ✅ Numeric only (desimal)
+        NumericDocumentFilter.applyTo(txtHargaBeli, true);
         panelFields.add(txtHargaBeli, gbc);
         
         // Info label untuk harga beli
@@ -191,17 +207,27 @@ public class FormProduk extends JFrame {
         txtSearch = new JTextField(25);
         txtSearch.setPreferredSize(new Dimension(250, 30));
         
-        btnSearch = new JButton("CARI");
-        btnSearch.setBackground(new Color(52, 152, 219));
-        btnSearch.setForeground(Color.WHITE);
-        btnSearch.setFocusPainted(false);
-        btnSearch.addActionListener(e -> searchProduk());
-        
-        btnRefresh = new JButton("REFRESH");
+        // ✅ LIVE SEARCH
+        txtSearch.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { triggerSearch(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { triggerSearch(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { triggerSearch(); }
+        });
+
+        btnRefresh = new JButton("↺");
+        btnRefresh.setToolTipText("Refresh data");
+        btnRefresh.setPreferredSize(new Dimension(40, 30));
         btnRefresh.setBackground(new Color(149, 165, 166));
         btnRefresh.setForeground(Color.WHITE);
         btnRefresh.setFocusPainted(false);
-        btnRefresh.addActionListener(e -> loadData());
+        btnRefresh.setFont(new Font("Arial", Font.BOLD, 14));
+        btnRefresh.addActionListener(e -> {
+            txtSearch.setText("");
+            loadData();
+        });
         
         btnHapus = new JButton("HAPUS");
         btnHapus.setBackground(new Color(231, 76, 60));
@@ -211,9 +237,8 @@ public class FormProduk extends JFrame {
         
         panelSearch.add(lblSearch);
         panelSearch.add(txtSearch);
-        panelSearch.add(btnSearch);
         panelSearch.add(btnRefresh);
-        panelSearch.add(Box.createHorizontalStrut(20));
+        panelSearch.add(Box.createHorizontalStrut(10));
         panelSearch.add(btnHapus);
         
         // Table
@@ -237,7 +262,6 @@ public class FormProduk extends JFrame {
         tableProduk.getColumnModel().getColumn(5).setPreferredWidth(100);
         tableProduk.getColumnModel().getColumn(6).setPreferredWidth(100);
 
-        // Double click to edit
         tableProduk.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -255,23 +279,42 @@ public class FormProduk extends JFrame {
         panelTable.add(panelSearch, BorderLayout.NORTH);
         panelTable.add(scrollPane, BorderLayout.CENTER);
         
-        // Add to main
         panelMain.add(panelForm, BorderLayout.NORTH);
         panelMain.add(panelTable, BorderLayout.CENTER);
         
         add(panelMain);
         
-        // Key listener for search
-        txtSearch.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    searchProduk();
-                }
-            }
-        });
+        // Timer untuk debounce live search
+        searchTimer = new Timer(SEARCH_DELAY, e -> performSearch());
+        searchTimer.setRepeats(false);
     }
-    
+
+    private void triggerSearch() {
+        searchTimer.restart();
+    }
+
+    private void performSearch() {
+        String keyword = txtSearch.getText().trim();
+        if (keyword.isEmpty()) {
+            loadData();
+        } else {
+            tableModel.setRowCount(0);
+            List<Produk> produkList = Produk.searchProduk(keyword);
+            for (Produk p : produkList) {
+                Object[] row = {
+                    p.getId(),
+                    p.getNamaProduk(),
+                    p.getNamaKategori(),
+                    p.getSatuanDasar(),
+                    String.format("%.2f", p.getStokDasar()),
+                    String.format("Rp %,.0f", p.getHargaBeli()),
+                    p.getDaftarSatuan().size() + " satuan"
+                };
+                tableModel.addRow(row);
+            }
+        }
+    }
+
     private void loadKategori() {
         cmbKategori.removeAllItems();
         List<Kategori> kategoriList = Kategori.getAllKategori();
@@ -297,34 +340,8 @@ public class FormProduk extends JFrame {
             tableModel.addRow(row);
         }
     }
-    
-    private void searchProduk() {
-        String keyword = txtSearch.getText().trim();
-        if (keyword.isEmpty()) {
-            loadData();
-            return;
-        }
 
-        tableModel.setRowCount(0);
-        List<Produk> produkList = Produk.searchProduk(keyword);
-
-        for (Produk p : produkList) {
-            Object[] row = {
-                p.getId(),
-                p.getNamaProduk(),
-                p.getNamaKategori(),
-                p.getSatuanDasar(),
-                String.format("%.2f", p.getStokDasar()),
-                String.format("Rp %,.0f", p.getHargaBeli()),
-                p.getDaftarSatuan().size() + " satuan"
-            };
-            tableModel.addRow(row);
-        }
-    }
-
-    
     private void simpanProduk() {
-        // Validasi
         if (txtNamaProduk.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Nama produk harus diisi!", "Validasi", JOptionPane.WARNING_MESSAGE);
             txtNamaProduk.requestFocus();
@@ -337,8 +354,8 @@ public class FormProduk extends JFrame {
         }
         
         try {
-            double stok = Double.parseDouble(txtStok.getText().trim());
-            double hargaBeli = Double.parseDouble(txtHargaBeli.getText().trim().replaceAll("[^0-9.]", ""));
+            double stok = parseNumericField(txtStok.getText());
+            double hargaBeli = parseNumericField(txtHargaBeli.getText());
             
             if (stok < 0) {
                 JOptionPane.showMessageDialog(this, "Stok tidak boleh negatif!", "Validasi", JOptionPane.WARNING_MESSAGE);
@@ -350,39 +367,31 @@ public class FormProduk extends JFrame {
                 return;
             }
             
-            // Create produk object
             Produk produk = new Produk();
             produk.setNamaProduk(txtNamaProduk.getText().trim());
             produk.setKategoriId(((Kategori) cmbKategori.getSelectedItem()).getId());
             produk.setSatuanDasar((String) cmbSatuanDasar.getSelectedItem());
             produk.setStokDasar(stok);
-            produk.setHargaBeli(hargaBeli);  // SET HARGA BELI
+            produk.setHargaBeli(hargaBeli);
             
-            // Buat minimal 1 satuan jual default
             List<SatuanJual> satuanList = new ArrayList<>();
             SatuanJual satuanDefault = new SatuanJual();
             satuanDefault.setNamaSatuan((String) cmbSatuanDasar.getSelectedItem());
             satuanDefault.setKonversiKeDasar(1.0);
-            satuanDefault.setHargaJual(hargaBeli * 1.3); // Default markup 30%
+            satuanDefault.setHargaJual(hargaBeli * 1.3);
             satuanDefault.setBarcode(null);
             satuanList.add(satuanDefault);
             produk.setDaftarSatuan(satuanList);
             
-            // Save
             if (Produk.tambahProduk(produk)) {
                 JOptionPane.showMessageDialog(this,
-                    "Produk berhasil ditambahkan!\n" +
-                    "Harga Beli: Rp " + String.format("%,.0f", hargaBeli) + "\n" +
-                    "Silakan kelola harga satuan jual.",
+                    "Produk berhasil ditambahkan!\nHarga Beli: Rp " + String.format("%,.0f", hargaBeli),
                     "Sukses",
                     JOptionPane.INFORMATION_MESSAGE);
                 loadData();
                 clearForm();
             } else {
-                JOptionPane.showMessageDialog(this,
-                    "Gagal menambahkan produk!",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Gagal menambahkan produk!", "Error", JOptionPane.ERROR_MESSAGE);
             }
             
         } catch (NumberFormatException ex) {
@@ -396,7 +405,6 @@ public class FormProduk extends JFrame {
             return;
         }
         
-        // Validasi
         if (txtNamaProduk.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Nama produk harus diisi!", "Validasi", JOptionPane.WARNING_MESSAGE);
             return;
@@ -408,8 +416,8 @@ public class FormProduk extends JFrame {
         }
         
         try {
-            double stok = Double.parseDouble(txtStok.getText().trim());
-            double hargaBeli = Double.parseDouble(txtHargaBeli.getText().trim().replaceAll("[^0-9.]", ""));
+            double stok = parseNumericField(txtStok.getText());
+            double hargaBeli = parseNumericField(txtHargaBeli.getText());
             
             if (stok < 0) {
                 JOptionPane.showMessageDialog(this, "Stok tidak boleh negatif!", "Validasi", JOptionPane.WARNING_MESSAGE);
@@ -421,25 +429,18 @@ public class FormProduk extends JFrame {
                 return;
             }
             
-            // === PERUBAHAN PENTING: Panggil metode updateProduk dengan 6 parameter (termasuk hargaBeli) ===
             if (Produk.updateProduk(selectedProdukId, 
                     txtNamaProduk.getText().trim(),
                     ((Kategori) cmbKategori.getSelectedItem()).getId(),
                     (String) cmbSatuanDasar.getSelectedItem(),
                     stok,
-                    hargaBeli)) { // Parameter hargaBeli ditambahkan di sini
+                    hargaBeli)) {
                 
-                JOptionPane.showMessageDialog(this,
-                    "Produk dan harga beli berhasil diupdate!",
-                    "Sukses",
-                    JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Produk dan harga beli berhasil diupdate!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
                 loadData();
                 clearForm();
             } else {
-                JOptionPane.showMessageDialog(this,
-                    "Gagal mengupdate produk!",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Gagal mengupdate produk!", "Error", JOptionPane.ERROR_MESSAGE);
             }
             
         } catch (NumberFormatException ex) {
@@ -450,10 +451,7 @@ public class FormProduk extends JFrame {
     private void hapusProduk() {
         int selectedRow = tableProduk.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this,
-                "Pilih produk yang akan dihapus!",
-                "Validasi",
-                JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Pilih produk yang akan dihapus!", "Validasi", JOptionPane.WARNING_MESSAGE);
             return;
         }
         
@@ -467,17 +465,11 @@ public class FormProduk extends JFrame {
             int produkId = (int) tableModel.getValueAt(selectedRow, 0);
             
             if (Produk.deleteProduk(produkId)) {
-                JOptionPane.showMessageDialog(this,
-                    "Produk berhasil dihapus!",
-                    "Sukses",
-                    JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Produk berhasil dihapus!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
                 loadData();
                 clearForm();
             } else {
-                JOptionPane.showMessageDialog(this,
-                    "Gagal menghapus produk!",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Gagal menghapus produk!", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -490,10 +482,9 @@ public class FormProduk extends JFrame {
             selectedProdukId = produk.getId();
             txtId.setText(String.valueOf(produk.getId()));
             txtNamaProduk.setText(produk.getNamaProduk());
-            txtStok.setText(String.format("%.2f", produk.getStokDasar()));
-            txtHargaBeli.setText(String.format("%.0f", produk.getHargaBeli()));  // LOAD HARGA BELI
+            txtStok.setText(formatNumberForField(produk.getStokDasar()));
+            txtHargaBeli.setText(formatNumberForField(produk.getHargaBeli()));
             
-            // Set kategori
             for (int i = 0; i < cmbKategori.getItemCount(); i++) {
                 Kategori k = cmbKategori.getItemAt(i);
                 if (k.getId() == produk.getKategoriId()) {
@@ -501,15 +492,11 @@ public class FormProduk extends JFrame {
                     break;
                 }
             }
-            
-            // Set satuan dasar
             cmbSatuanDasar.setSelectedItem(produk.getSatuanDasar());
             
-            // Enable update button
             btnSimpan.setEnabled(false);
             btnUpdate.setEnabled(true);
             btnKelolaHarga.setEnabled(true);
-            
             txtNamaProduk.requestFocus();
         }
     }
@@ -530,28 +517,118 @@ public class FormProduk extends JFrame {
         txtId.setText("");
         txtNamaProduk.setText("");
         txtStok.setText("0");
-        txtHargaBeli.setText("0");  // CLEAR HARGA BELI
+        txtHargaBeli.setText("0");
         cmbKategori.setSelectedIndex(0);
         cmbSatuanDasar.setSelectedIndex(0);
         
         btnSimpan.setEnabled(true);
         btnUpdate.setEnabled(false);
         btnKelolaHarga.setEnabled(false);
-        
         tableProduk.clearSelection();
         txtNamaProduk.requestFocus();
     }
+
+    // Helper: parsing input user (handle pemisah ribuan & desimal)
+    private double parseNumericField(String text) {
+        if (text == null || text.trim().isEmpty()) return 0.0;
+        String clean = text.replaceAll("[^0-9.,]", "")
+                           .replace(",", "."); // normalisasi ke .
+        if (clean.isEmpty()) return 0.0;
+        try {
+            return Double.parseDouble(clean);
+        } catch (NumberFormatException e) {
+            return 0.0;
+        }
+    }
+
+    // Helper: format angka ke string tanpa koma ribuan, hanya titik desimal
+    private String formatNumberForField(double value) {
+        DecimalFormat df = new DecimalFormat("0.##");
+        df.setDecimalSeparatorAlwaysShown(false);
+        return df.format(value);
+    }
 }
 
-/**
- * Dialog Kelola Harga & Satuan Jual
- */
+// =====================================================
+// 🔢 NumericDocumentFilter — Only allow digits & single dot
+// =====================================================
+class NumericDocumentFilter extends PlainDocument {
+    private final boolean allowDecimal;
+
+    public NumericDocumentFilter(boolean allowDecimal) {
+        this.allowDecimal = allowDecimal;
+    }
+
+    public static void applyTo(JTextField field, boolean allowDecimal) {
+        AbstractDocument doc = (AbstractDocument) field.getDocument();
+        doc.setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
+                    throws BadLocationException {
+                if (isValid(fb.getDocument(), offset, string)) {
+                    super.insertString(fb, offset, string, attr);
+                }
+            }
+
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                    throws BadLocationException {
+                if (isValid(fb.getDocument(), offset, text)) {
+                    super.replace(fb, offset, length, text, attrs);
+                }
+            }
+
+            private boolean isValid(Document doc, int offset, String newText) {
+                try {
+                    String currentText = doc.getText(0, doc.getLength());
+                    String pendingText = new StringBuilder(currentText)
+                            .insert(offset, newText)
+                            .toString();
+
+                    if (pendingText.isEmpty()) return true;
+
+                    if (!pendingText.matches("[0-9.,]*")) return false;
+
+                    String normalized = pendingText.replace(",", ".");
+
+                    if (allowDecimal && normalized.chars().filter(ch -> ch == '.').count() > 1) {
+                        return false;
+                    }
+
+                    if (allowDecimal && normalized.startsWith(".") && normalized.length() == 1) return false;
+                    if (allowDecimal && normalized.endsWith(".") && normalized.length() > 1) return false;
+
+                    if (!allowDecimal && normalized.contains(".")) return false;
+
+                    if (!normalized.isEmpty()) {
+                        Double.parseDouble(normalized);
+                    }
+                    return true;
+
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+        });
+    }
+
+    // ✅ METHOD INI YANG HARUS ADA!
+    public static double parseDouble(String text) throws NumberFormatException {
+        if (text == null || text.trim().isEmpty()) return 0.0;
+        String clean = text.replaceAll("[^0-9.,]", "").replace(",", ".");
+        if (clean.isEmpty()) return 0.0;
+        return Double.parseDouble(clean);
+    }
+}
+
+// =====================================================
+// Dialog Kelola Harga — tetap sama, tapi input numerik diperbaiki
+// =====================================================
 class DialogKelolaHarga extends JDialog {
-    
     private Produk produk;
     private JTable tableSatuan;
     private DefaultTableModel tableSatuanModel;
-    
+
     public DialogKelolaHarga(JFrame parent, Produk produk) {
         super(parent, "Kelola Harga - " + produk.getNamaProduk(), true);
         this.produk = produk;
@@ -559,15 +636,14 @@ class DialogKelolaHarga extends JDialog {
         loadData();
         setLocationRelativeTo(parent);
     }
-    
+
     private void initComponents() {
         setSize(750, 500);
         setLayout(new BorderLayout(10, 10));
-        
+
         JPanel panelMain = new JPanel(new BorderLayout(10, 10));
         panelMain.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        
-        // Info Panel
+
         JPanel panelInfo = new JPanel(new GridLayout(4, 2, 10, 5));
         panelInfo.setBorder(BorderFactory.createTitledBorder("Info Produk"));
         panelInfo.add(new JLabel("Produk:"));
@@ -578,8 +654,7 @@ class DialogKelolaHarga extends JDialog {
         panelInfo.add(new JLabel(produk.getSatuanDasar() + " (Stok: " + String.format("%.2f", produk.getStokDasar()) + ")"));
         panelInfo.add(new JLabel("Harga Beli:"));
         panelInfo.add(new JLabel(String.format("Rp %,.0f", produk.getHargaBeli())));
-        
-        // Table Satuan Jual
+
         String[] columns = {"ID", "Nama Satuan", "Konversi ke Dasar", "Harga Jual", "Barcode"};
         tableSatuanModel = new DefaultTableModel(columns, 0);
         tableSatuan = new JTable(tableSatuanModel);
@@ -589,50 +664,48 @@ class DialogKelolaHarga extends JDialog {
         tableSatuan.getColumnModel().getColumn(2).setPreferredWidth(120);
         tableSatuan.getColumnModel().getColumn(3).setPreferredWidth(120);
         tableSatuan.getColumnModel().getColumn(4).setPreferredWidth(150);
-        
+
         JScrollPane scrollPane = new JScrollPane(tableSatuan);
-        
-        // Button Panel
+
         JPanel panelButton = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
-        
+
         JButton btnTambah = new JButton("Tambah Satuan");
         btnTambah.setBackground(new Color(46, 204, 113));
         btnTambah.setForeground(Color.WHITE);
         btnTambah.setFocusPainted(false);
         btnTambah.addActionListener(e -> tambahSatuan());
-        
+
         JButton btnEdit = new JButton("Edit Satuan");
         btnEdit.setBackground(new Color(52, 152, 219));
         btnEdit.setForeground(Color.WHITE);
         btnEdit.setFocusPainted(false);
         btnEdit.addActionListener(e -> editSatuan());
-        
+
         JButton btnHapus = new JButton("Hapus Satuan");
         btnHapus.setBackground(new Color(231, 76, 60));
         btnHapus.setForeground(Color.WHITE);
         btnHapus.setFocusPainted(false);
         btnHapus.addActionListener(e -> hapusSatuan());
-        
+
         JButton btnTutup = new JButton("Tutup");
         btnTutup.addActionListener(e -> dispose());
-        
+
         panelButton.add(btnTambah);
         panelButton.add(btnEdit);
         panelButton.add(btnHapus);
         panelButton.add(Box.createHorizontalStrut(20));
         panelButton.add(btnTutup);
-        
+
         panelMain.add(panelInfo, BorderLayout.NORTH);
         panelMain.add(scrollPane, BorderLayout.CENTER);
         panelMain.add(panelButton, BorderLayout.SOUTH);
-        
+
         add(panelMain);
     }
-    
+
     private void loadData() {
         tableSatuanModel.setRowCount(0);
         List<SatuanJual> satuanList = SatuanJual.getSatuanByProdukId(produk.getId());
-        
         for (SatuanJual s : satuanList) {
             Object[] row = {
                 s.getId(),
@@ -644,40 +717,33 @@ class DialogKelolaHarga extends JDialog {
             tableSatuanModel.addRow(row);
         }
     }
-    
+
     private void tambahSatuan() {
         new DialogInputSatuan(this, produk, null).setVisible(true);
         loadData();
     }
-    
+
     private void editSatuan() {
         int selectedRow = tableSatuan.getSelectedRow();
         if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this, "Pilih satuan yang akan diedit!");
             return;
         }
-        
         int satuanId = (int) tableSatuanModel.getValueAt(selectedRow, 0);
         SatuanJual satuan = SatuanJual.getSatuanById(satuanId);
         new DialogInputSatuan(this, produk, satuan).setVisible(true);
         loadData();
     }
-    
+
     private void hapusSatuan() {
         int selectedRow = tableSatuan.getSelectedRow();
         if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this, "Pilih satuan yang akan dihapus!");
             return;
         }
-        
-        int confirm = JOptionPane.showConfirmDialog(this,
-            "Yakin ingin menghapus satuan ini?",
-            "Konfirmasi",
-            JOptionPane.YES_NO_OPTION);
-        
+        int confirm = JOptionPane.showConfirmDialog(this, "Yakin ingin menghapus satuan ini?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             int satuanId = (int) tableSatuanModel.getValueAt(selectedRow, 0);
-            
             if (SatuanJual.deleteSatuan(satuanId)) {
                 JOptionPane.showMessageDialog(this, "Satuan berhasil dihapus!");
                 loadData();
@@ -688,16 +754,15 @@ class DialogKelolaHarga extends JDialog {
     }
 }
 
-/**
- * Dialog Input/Edit Satuan Jual
- */
+// =====================================================
+// Dialog Input Satuan — dengan input numerik
+// =====================================================
 class DialogInputSatuan extends JDialog {
-    
     private Produk produk;
     private SatuanJual satuan;
     private JTextField txtNamaSatuan, txtKonversi, txtHarga, txtBarcode;
     private boolean isEdit;
-    
+
     public DialogInputSatuan(JDialog parent, Produk produk, SatuanJual satuan) {
         super(parent, satuan == null ? "Tambah Satuan Jual" : "Edit Satuan Jual", true);
         this.produk = produk;
@@ -709,83 +774,80 @@ class DialogInputSatuan extends JDialog {
         }
         setLocationRelativeTo(parent);
     }
-    
+
     private void initComponents() {
         setSize(450, 350);
         setLayout(new BorderLayout(10, 10));
-        
+
         JPanel panelMain = new JPanel(new GridBagLayout());
         panelMain.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(8, 8, 8, 8);
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        
-        // Info Produk
+
         gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
         JLabel lblInfo = new JLabel("Produk: " + produk.getNamaProduk() + " (Dasar: " + produk.getSatuanDasar() + ")");
         lblInfo.setFont(new Font("Arial", Font.BOLD, 12));
         panelMain.add(lblInfo, gbc);
-        
-        // Info Harga Beli
+
         gbc.gridy = 1;
         JLabel lblInfoHarga = new JLabel("Harga Beli: " + String.format("Rp %,.0f", produk.getHargaBeli()));
         lblInfoHarga.setFont(new Font("Arial", Font.PLAIN, 11));
         panelMain.add(lblInfoHarga, gbc);
-        
+
         gbc.gridwidth = 1;
-        
-        // Nama Satuan
+
         gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0.3;
         JLabel lblNama = new JLabel("Nama Satuan:*");
         lblNama.setFont(new Font("Arial", Font.BOLD, 11));
         panelMain.add(lblNama, gbc);
-        
+
         gbc.gridx = 1; gbc.gridy = 2; gbc.weightx = 0.7;
         txtNamaSatuan = new JTextField();
         txtNamaSatuan.setPreferredSize(new Dimension(200, 30));
         panelMain.add(txtNamaSatuan, gbc);
-        
-        // Konversi
+
         gbc.gridx = 0; gbc.gridy = 3; gbc.weightx = 0.3;
         JLabel lblKonversi = new JLabel("Konversi ke Dasar:*");
         lblKonversi.setFont(new Font("Arial", Font.BOLD, 11));
         panelMain.add(lblKonversi, gbc);
-        
+
         gbc.gridx = 1; gbc.gridy = 3; gbc.weightx = 0.7;
         txtKonversi = new JTextField("1");
         txtKonversi.setPreferredSize(new Dimension(200, 30));
+        // ✅ Numeric only (desimal)
+        NumericDocumentFilter.applyTo(txtKonversi, true);
         panelMain.add(txtKonversi, gbc);
-        
+
         gbc.gridx = 1; gbc.gridy = 4; gbc.weightx = 0.7;
         JLabel lblKonversiInfo = new JLabel("(1 satuan ini = berapa " + produk.getSatuanDasar() + ")");
         lblKonversiInfo.setFont(new Font("Arial", Font.ITALIC, 10));
         lblKonversiInfo.setForeground(Color.GRAY);
         panelMain.add(lblKonversiInfo, gbc);
-        
-        // Harga Jual
+
         gbc.gridx = 0; gbc.gridy = 5; gbc.weightx = 0.3;
         JLabel lblHarga = new JLabel("Harga Jual (Rp):*");
         lblHarga.setFont(new Font("Arial", Font.BOLD, 11));
         panelMain.add(lblHarga, gbc);
-        
+
         gbc.gridx = 1; gbc.gridy = 5; gbc.weightx = 0.7;
         txtHarga = new JTextField("0");
         txtHarga.setPreferredSize(new Dimension(200, 30));
+        // ✅ Numeric only (desimal)
+        NumericDocumentFilter.applyTo(txtHarga, true);
         panelMain.add(txtHarga, gbc);
-        
-        // Barcode
+
         gbc.gridx = 0; gbc.gridy = 6; gbc.weightx = 0.3;
         panelMain.add(new JLabel("Barcode:"), gbc);
-        
+
         gbc.gridx = 1; gbc.gridy = 6; gbc.weightx = 0.7;
         txtBarcode = new JTextField();
         txtBarcode.setPreferredSize(new Dimension(200, 30));
         panelMain.add(txtBarcode, gbc);
-        
-        // Button Panel
+
         JPanel panelButton = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
-        
+
         JButton btnSimpan = new JButton(isEdit ? "UPDATE" : "SIMPAN");
         btnSimpan.setPreferredSize(new Dimension(120, 35));
         btnSimpan.setBackground(new Color(46, 204, 113));
@@ -793,54 +855,52 @@ class DialogInputSatuan extends JDialog {
         btnSimpan.setFocusPainted(false);
         btnSimpan.setFont(new Font("Arial", Font.BOLD, 12));
         btnSimpan.addActionListener(e -> simpan());
-        
+
         JButton btnBatal = new JButton("BATAL");
         btnBatal.setPreferredSize(new Dimension(100, 35));
         btnBatal.addActionListener(e -> dispose());
-        
+
         panelButton.add(btnSimpan);
         panelButton.add(btnBatal);
-        
+
         add(panelMain, BorderLayout.CENTER);
         add(panelButton, BorderLayout.SOUTH);
     }
-    
+
     private void loadDataToForm() {
         txtNamaSatuan.setText(satuan.getNamaSatuan());
-        txtKonversi.setText(String.valueOf(satuan.getKonversiKeDasar()));
-        txtHarga.setText(String.valueOf(satuan.getHargaJual()));
+        txtKonversi.setText(new DecimalFormat("0.##").format(satuan.getKonversiKeDasar()));
+        txtHarga.setText(new DecimalFormat("0.##").format(satuan.getHargaJual()));
         txtBarcode.setText(satuan.getBarcode() != null ? satuan.getBarcode() : "");
     }
-    
+
     private void simpan() {
-        // Validasi
         if (txtNamaSatuan.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Nama satuan harus diisi!");
             txtNamaSatuan.requestFocus();
             return;
         }
-        
+
         try {
-            double konversi = Double.parseDouble(txtKonversi.getText().trim());
-            double harga = Double.parseDouble(txtHarga.getText().trim());
-            
+            double konversi = NumericDocumentFilter.parseDouble(txtKonversi.getText());
+            double harga = NumericDocumentFilter.parseDouble(txtHarga.getText());
+
             if (konversi <= 0) {
                 JOptionPane.showMessageDialog(this, "Konversi harus lebih dari 0!");
                 return;
             }
-            
+
             if (harga < 0) {
                 JOptionPane.showMessageDialog(this, "Harga tidak boleh negatif!");
                 return;
             }
-            
+
             if (isEdit) {
-                // Update satuan
                 satuan.setNamaSatuan(txtNamaSatuan.getText().trim());
                 satuan.setKonversiKeDasar(konversi);
                 satuan.setHargaJual(harga);
                 satuan.setBarcode(txtBarcode.getText().trim().isEmpty() ? null : txtBarcode.getText().trim());
-                
+
                 if (SatuanJual.updateSatuan(satuan)) {
                     JOptionPane.showMessageDialog(this, "Satuan berhasil diupdate!");
                     dispose();
@@ -848,14 +908,13 @@ class DialogInputSatuan extends JDialog {
                     JOptionPane.showMessageDialog(this, "Gagal mengupdate satuan!");
                 }
             } else {
-                // Tambah satuan baru
                 SatuanJual satuanBaru = new SatuanJual();
                 satuanBaru.setProdukId(produk.getId());
                 satuanBaru.setNamaSatuan(txtNamaSatuan.getText().trim());
                 satuanBaru.setKonversiKeDasar(konversi);
                 satuanBaru.setHargaJual(harga);
                 satuanBaru.setBarcode(txtBarcode.getText().trim().isEmpty() ? null : txtBarcode.getText().trim());
-                
+
                 if (SatuanJual.tambahSatuan(satuanBaru)) {
                     JOptionPane.showMessageDialog(this, "Satuan berhasil ditambahkan!");
                     dispose();
@@ -863,9 +922,11 @@ class DialogInputSatuan extends JDialog {
                     JOptionPane.showMessageDialog(this, "Gagal menambahkan satuan!");
                 }
             }
-            
+
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "Format angka tidak valid!");
         }
     }
 }
+
+// Tambahkan helper di NumericDocumentFilter untuk parse (opsional, tapi rapi)

@@ -5,6 +5,10 @@ import javax.swing.*;
 import javax.swing.table.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.NumberFormat;
@@ -19,6 +23,8 @@ import java.util.stream.Collectors;
  * Form Transaksi Penjualan (POS) dengan UI Grid Produk - Full Screen Version
  * Stok ditampilkan jelas di bawah harga produk.
  * 🔍 Fitur Live Search ditambahkan.
+ * ✅ Perbaikan: Stok produk langsung berkurang di UI setelah transaksi disimpan.
+ * ✅ Perbaikan: Input "Jumlah Bayar" hanya menerima angka.
  */
 public class FormTransaksi extends JFrame {
     private User currentUser;
@@ -382,7 +388,7 @@ public class FormTransaksi extends JFrame {
         panel.add(methodPanel);
         panel.add(Box.createVerticalStrut(10));
 
-        // Input Bayar
+        // Input Bayar (HANYA ANGKA)
         JPanel bayarPanel = new JPanel(new BorderLayout(10, 5));
         bayarPanel.setBackground(LIGHT_COLOR);
         bayarPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
@@ -395,6 +401,10 @@ public class FormTransaksi extends JFrame {
             BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
             BorderFactory.createEmptyBorder(5, 15, 5, 15)
         ));
+
+        // 🔒 FILTER: HANYA ANGKA DIIZINKAN
+        ((AbstractDocument) txtBayar.getDocument()).setDocumentFilter(new NumericDocumentFilter());
+
         txtBayar.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
@@ -602,6 +612,10 @@ public class FormTransaksi extends JFrame {
                 updateTotal();
                 generateKodeTransaksi();
                 txtSearch.setText("");
+
+                // ✅ PERBAIKAN UTAMA: Refresh data produk agar stok langsung berkurang di UI
+                loadAllProducts();
+                filterProducts();
             } else {
                 JOptionPane.showMessageDialog(this, "Gagal menyimpan transaksi!", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -775,6 +789,8 @@ public class FormTransaksi extends JFrame {
         strukDialog.setVisible(true);
     }
 
+    // === Kelas Bantuan ===
+
     class ProductCard extends JPanel {
         private Produk produk;
 
@@ -839,17 +855,32 @@ public class FormTransaksi extends JFrame {
             });
         }
     }
-}
 
-// === Helper Classes ===
+    // ✅ FILTER UNTUK FIELD ANGKA SAJA
+    private class NumericDocumentFilter extends DocumentFilter {
+        @Override
+        public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
+                throws BadLocationException {
+            if (isNumeric(string)) {
+                super.insertString(fb, offset, string, attr);
+            }
+        }
 
-class ItemKeranjang {
-    Produk produk;
-    SatuanJual satuan;
-    double qty;
-    double subtotal;
-}
+        @Override
+        public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                throws BadLocationException {
+            if (isNumeric(text)) {
+                super.replace(fb, offset, length, text, attrs);
+            }
+        }
 
+        private boolean isNumeric(String str) {
+            if (str == null) return false;
+            return str.matches("\\d*");
+        }
+    }
+    
+    // === Kelas WrapLayout untuk Layout Grid Fleksibel ===
 class WrapLayout extends FlowLayout {
     public WrapLayout() { super(); }
     public WrapLayout(int align) { super(align); }
@@ -913,4 +944,14 @@ class WrapLayout extends FlowLayout {
         if (dim.height > 0) dim.height += getVgap();
         dim.height += rowHeight;
     }
+}
+}
+
+// === Kelas Data Pendukung (tetap di luar kelas utama) ===
+
+class ItemKeranjang {
+    Produk produk;
+    SatuanJual satuan;
+    double qty;
+    double subtotal;
 }
