@@ -78,7 +78,7 @@ public class SplashScreen extends JWindow {
             System.err.println("Error loading logo: " + e.getMessage());
         }
 
-        JLabel lblTitle = new JLabel("TOKO BANGUNAN MAJU JAYA");
+        JLabel lblTitle = new JLabel("TOKO BANGUNAN WARNER");
         lblTitle.setFont(titleFont);
         lblTitle.setForeground(Color.WHITE);
         lblTitle.setAlignmentX(Component.CENTER_ALIGNMENT);

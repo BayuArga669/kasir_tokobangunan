@@ -23,14 +23,14 @@ import org.jfree.chart.axis.CategoryLabelPositions;
 public class FormLaporanLaba extends JFrame {
     
     private JDateChooser dateFrom, dateTo;
-    private JButton btnTampilkan, btnExport, btnDetail, btnChartType;
+    private JButton btnTampilkan, btnDetail, btnChartType;
     private JTable tableLaba;
     private DefaultTableModel tableLabaModel;
-    private JLabel lblTotalPendapatan, lblTotalModal, lblLabaBersih, lblMarginPersen;
-    private JProgressBar progressMargin;
+    private JLabel lblTotalPendapatan, lblTotalModal, lblLabaBersih;
     private JPanel chartPanel;
     private ChartPanel currentChartPanel;
     private boolean isPieChart = false;
+    private JPanel chartContentPanel; // Added to better manage chart content
     
     private SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
     private Map<Integer, ProdukLaba> currentProdukLabaMap;
@@ -65,15 +65,19 @@ public class FormLaporanLaba extends JFrame {
         // Chart Panel
         chartPanel = createChartPanel();
         
+        // Combine header, filter, and summary
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(headerPanel, BorderLayout.NORTH);
         topPanel.add(filterPanel, BorderLayout.CENTER);
         topPanel.add(summaryPanel, BorderLayout.SOUTH);
         
+        // Create split pane with proper divider location
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-        splitPane.setDividerLocation(800);
+        splitPane.setDividerLocation(750);
+        splitPane.setResizeWeight(0.6); // Give more space to the table
         splitPane.setLeftComponent(tablePanel);
         splitPane.setRightComponent(chartPanel);
+        splitPane.setContinuousLayout(true);
         
         mainPanel.add(topPanel, BorderLayout.NORTH);
         mainPanel.add(splitPane, BorderLayout.CENTER);
@@ -87,20 +91,26 @@ public class FormLaporanLaba extends JFrame {
         panel.setPreferredSize(new Dimension(0, 80));
         panel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
         
-        JLabel lblTitle = new JLabel("💹 LAPORAN LABA RUGI");
-        lblTitle.setFont(new Font("Segoe UI Emoji", Font.BOLD, 24));
-        lblTitle.setForeground(Color.WHITE);
-        
-        JLabel lblSubtitle = new JLabel("Analisis Keuntungan & Margin Profit");
-        lblSubtitle.setFont(new Font("Arial", Font.PLAIN, 13));
-        lblSubtitle.setForeground(new Color(230, 255, 240));
-        
-        JPanel titlePanel = new JPanel();
-        titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
+        JPanel titlePanel = new JPanel(new GridBagLayout());
         titlePanel.setBackground(new Color(46, 204, 113));
-        titlePanel.add(lblTitle);
-        titlePanel.add(Box.createVerticalStrut(5));
-        titlePanel.add(lblSubtitle);
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(0, 0, 5, 0);
+        
+        JLabel lblTitle = new JLabel("LAPORAN LABA RUGI");
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        lblTitle.setForeground(Color.WHITE);
+        titlePanel.add(lblTitle, gbc);
+        
+        gbc.gridy = 1;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        JLabel lblSubtitle = new JLabel("Analisis Keuntungan & Margin Profit");
+        lblSubtitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblSubtitle.setForeground(new Color(230, 255, 240));
+        titlePanel.add(lblSubtitle, gbc);
         
         panel.add(titlePanel, BorderLayout.WEST);
         
@@ -113,42 +123,42 @@ public class FormLaporanLaba extends JFrame {
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
         JLabel lblPeriode = new JLabel("Periode:");
-        lblPeriode.setFont(new Font("Arial", Font.BOLD, 13));
+        lblPeriode.setFont(new Font("Segoe UI", Font.BOLD, 13));
         
         dateFrom = new JDateChooser();
         dateFrom.setPreferredSize(new Dimension(140, 30));
         dateFrom.setDateFormatString("dd/MM/yyyy");
         
         JLabel lblSampai = new JLabel("s/d");
-        lblSampai.setFont(new Font("Arial", Font.BOLD, 12));
+        lblSampai.setFont(new Font("Segoe UI", Font.BOLD, 12));
         
         dateTo = new JDateChooser();
         dateTo.setPreferredSize(new Dimension(140, 30));
         dateTo.setDateFormatString("dd/MM/yyyy");
         
-        btnTampilkan = new JButton("🔍 ANALISIS");
+        btnTampilkan = new JButton("ANALISIS");
         btnTampilkan.setPreferredSize(new Dimension(140, 35));
         btnTampilkan.setBackground(new Color(46, 204, 113));
         btnTampilkan.setForeground(Color.WHITE);
         btnTampilkan.setFocusPainted(false);
-        btnTampilkan.setFont(new Font("Segoe UI Emoji", Font.BOLD, 12));
+        btnTampilkan.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btnTampilkan.addActionListener(e -> loadLaporan());
         
-        btnDetail = new JButton("📊 ANALISIS MARGIN");
+        btnDetail = new JButton("ANALISIS MARGIN");
         btnDetail.setPreferredSize(new Dimension(160, 35));
         btnDetail.setBackground(new Color(52, 152, 219));
         btnDetail.setForeground(Color.WHITE);
         btnDetail.setFocusPainted(false);
-        btnDetail.setFont(new Font("Segoe UI Emoji", Font.BOLD, 12));
+        btnDetail.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btnDetail.addActionListener(e -> openAnalisisMargin());
         
-        btnExport = new JButton("📄 EXPORT");
-        btnExport.setPreferredSize(new Dimension(120, 35));
-        btnExport.setBackground(new Color(230, 126, 34));
-        btnExport.setForeground(Color.WHITE);
-        btnExport.setFocusPainted(false);
-        btnExport.setFont(new Font("Segoe UI Emoji", Font.BOLD, 12));
-        btnExport.addActionListener(e -> exportReport());
+//        btnExport = new JButton("EXPORT");
+//        btnExport.setPreferredSize(new Dimension(120, 35));
+//        btnExport.setBackground(new Color(230, 126, 34));
+//        btnExport.setForeground(Color.WHITE);
+//        btnExport.setFocusPainted(false);
+//        btnExport.setFont(new Font("Segoe UI", Font.BOLD, 12));
+////        btnExport.addActionListener(e -> exportReport());
         
         panel.add(lblPeriode);
         panel.add(dateFrom);
@@ -156,119 +166,65 @@ public class FormLaporanLaba extends JFrame {
         panel.add(dateTo);
         panel.add(btnTampilkan);
         panel.add(btnDetail);
-        panel.add(btnExport);
+//        panel.add(btnExport);
         
         return panel;
     }
     
     private JPanel createSummaryPanel() {
-        JPanel panel = new JPanel(new GridLayout(1, 4, 15, 0));
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 10, 15, 10));
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setBackground(new Color(240, 242, 245));
+        wrapper.setBorder(BorderFactory.createEmptyBorder(15, 10, 15, 10));
+        
+        JPanel panel = new JPanel(new GridLayout(1, 3, 15, 0));
         panel.setBackground(new Color(240, 242, 245));
-        panel.setPreferredSize(new Dimension(0, 120));
         
         // Card 1: Total Pendapatan
-        JPanel card1 = createSummaryCard("Total Pendapatan", "Rp 0", new Color(52, 152, 219), "💵");
-        lblTotalPendapatan = (JLabel) ((JPanel)card1.getComponent(0)).getComponent(2);
-        
+        lblTotalPendapatan = new JLabel("Rp 0");
+        JPanel card1 = createSummaryCard("TOTAL PENDAPATAN", lblTotalPendapatan, new Color(52, 152, 219));
         
         // Card 2: Total Modal
-        JPanel card2 = createSummaryCard("Total Modal", "Rp 0", new Color(231, 76, 60), "💸");
-        lblTotalModal = (JLabel) ((JPanel)card2.getComponent(0)).getComponent(2);
+        lblTotalModal = new JLabel("Rp 0");
+        JPanel card2 = createSummaryCard("TOTAL MODAL", lblTotalModal, new Color(231, 76, 60));
         
         // Card 3: Laba Bersih
-        JPanel card3 = createSummaryCard("Laba Bersih", "Rp 0", new Color(46, 204, 113), "💰");
-        lblLabaBersih = (JLabel) ((JPanel)card3.getComponent(0)).getComponent(2);
-        
-        // Card 4: Margin Profit
-        JPanel card4 = createMarginCard();
+        lblLabaBersih = new JLabel("Rp 0");
+        JPanel card3 = createSummaryCard("LABA BERSIH", lblLabaBersih, new Color(46, 204, 113));
         
         panel.add(card1);
         panel.add(card2);
         panel.add(card3);
-        panel.add(card4);
         
-        return panel;
+        wrapper.add(panel, BorderLayout.CENTER);
+        
+        return wrapper;
     }
     
-    private JPanel createSummaryCard(String title, String value, Color color, String icon) {
+    private JPanel createSummaryCard(String title, JLabel valueLabel, Color bgColor) {
         JPanel card = new JPanel(new BorderLayout());
-        card.setBackground(color);
+        card.setBackground(Color.WHITE);
         card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(color.darker(), 2),
-            BorderFactory.createEmptyBorder(15, 15, 15, 15)
+            BorderFactory.createLineBorder(new Color(220, 225, 230), 1),
+            BorderFactory.createEmptyBorder(20, 20, 20, 20)
         ));
         
         JPanel content = new JPanel();
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.setBackground(color);
+        content.setBackground(Color.WHITE);
         
-        JLabel lblIcon = new JLabel(icon);
-        lblIcon.setFont(new Font("Arial", Font.PLAIN, 32));
-        lblIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
+        // Title
         JLabel lblTitle = new JLabel(title);
-        lblTitle.setFont(new Font("Arial", Font.PLAIN, 12));
-        lblTitle.setForeground(new Color(230, 240, 255));
-        lblTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
-        JLabel lblValue = new JLabel(value);
-        lblValue.setFont(new Font("Arial", Font.BOLD, 22));
-        lblValue.setForeground(Color.WHITE);
-        lblValue.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
-        content.add(lblIcon);
-        content.add(Box.createVerticalStrut(5));
+        lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblTitle.setForeground(new Color(100, 110, 120));
+        lblTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
         content.add(lblTitle);
-        content.add(Box.createVerticalStrut(8));
-        content.add(lblValue);
+        content.add(Box.createVerticalStrut(10));
         
-        card.add(content, BorderLayout.CENTER);
-        
-        return card;
-    }
-    
-    private JPanel createMarginCard() {
-        JPanel card = new JPanel(new BorderLayout());
-        card.setBackground(new Color(155, 89, 182));
-        card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(142, 68, 173), 2),
-            BorderFactory.createEmptyBorder(15, 15, 15, 15)
-        ));
-        
-        JPanel content = new JPanel();
-        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.setBackground(new Color(155, 89, 182));
-        
-        JLabel lblIcon = new JLabel("📈");
-        lblIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 32));
-        lblIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
-        JLabel lblTitle = new JLabel("Margin Profit");
-        lblTitle.setFont(new Font("Arial", Font.PLAIN, 12));
-        lblTitle.setForeground(new Color(230, 240, 255));
-        lblTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
-        lblMarginPersen = new JLabel("0%");
-        lblMarginPersen.setFont(new Font("Arial", Font.BOLD, 22));
-        lblMarginPersen.setForeground(Color.WHITE);
-        lblMarginPersen.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
-        progressMargin = new JProgressBar(0, 100);
-        progressMargin.setValue(0);
-        progressMargin.setStringPainted(false);
-        progressMargin.setPreferredSize(new Dimension(150, 10));
-        progressMargin.setMaximumSize(new Dimension(150, 10));
-        progressMargin.setForeground(new Color(46, 204, 113));
-        progressMargin.setBackground(new Color(142, 68, 173));
-        
-        content.add(lblIcon);
-        content.add(Box.createVerticalStrut(5));
-        content.add(lblTitle);
-        content.add(Box.createVerticalStrut(8));
-        content.add(lblMarginPersen);
-        content.add(Box.createVerticalStrut(8));
-        content.add(progressMargin);
+        // Value label
+        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        valueLabel.setForeground(bgColor);
+        valueLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        content.add(valueLabel);
         
         card.add(content, BorderLayout.CENTER);
         
@@ -282,7 +238,7 @@ public class FormLaporanLaba extends JFrame {
             "Detail Laba per Produk",
             javax.swing.border.TitledBorder.LEFT,
             javax.swing.border.TitledBorder.TOP,
-            new Font("Arial", Font.BOLD, 13),
+            new Font("Segoe UI", Font.BOLD, 13),
             new Color(52, 152, 219)
         ));
         
@@ -296,8 +252,8 @@ public class FormLaporanLaba extends JFrame {
         
         tableLaba = new JTable(tableLabaModel);
         tableLaba.setRowHeight(30);
-        tableLaba.setFont(new Font("Arial", Font.PLAIN, 12));
-        tableLaba.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+        tableLaba.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        tableLaba.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
         tableLaba.getTableHeader().setBackground(new Color(236, 240, 241));
         
         tableLaba.getColumnModel().getColumn(0).setPreferredWidth(200);
@@ -324,14 +280,14 @@ public class FormLaporanLaba extends JFrame {
             "Grafik Keuntungan",
             javax.swing.border.TitledBorder.LEFT,
             javax.swing.border.TitledBorder.TOP,
-            new Font("Arial", Font.BOLD, 13),
+            new Font("Segoe UI", Font.BOLD, 13),
             new Color(46, 204, 113)
         ));
         panel.setBackground(Color.WHITE);
         
         // Tombol ganti tipe chart
-        btnChartType = new JButton("🔄 Ganti ke Pie Chart");
-        btnChartType.setFont(new Font("Segoe UI Emoji", Font.BOLD, 11));
+        btnChartType = new JButton("Ganti ke Pie Chart");
+        btnChartType.setFont(new Font("Segoe UI", Font.BOLD, 11));
         btnChartType.setBackground(new Color(52, 152, 219));
         btnChartType.setForeground(Color.WHITE);
         btnChartType.setFocusPainted(false);
@@ -343,16 +299,21 @@ public class FormLaporanLaba extends JFrame {
         
         panel.add(btnPanel, BorderLayout.NORTH);
         
+        // Create a separate panel for chart content to better manage it
+        chartContentPanel = new JPanel(new BorderLayout());
+        chartContentPanel.setBackground(Color.WHITE);
+        
         // Default placeholder
         JLabel lblPlaceholder = new JLabel("<html><center>" +
-            "📊<br><br>" +
+            "<br><br>" +
             "Klik tombol ANALISIS<br>" +
             "untuk menampilkan grafik</center></html>",
             SwingConstants.CENTER);
-        lblPlaceholder.setFont(new Font("Arial", Font.PLAIN, 14));
+        lblPlaceholder.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblPlaceholder.setForeground(Color.GRAY);
         
-        panel.add(lblPlaceholder, BorderLayout.CENTER);
+        chartContentPanel.add(lblPlaceholder, BorderLayout.CENTER);
+        panel.add(chartContentPanel, BorderLayout.CENTER);
         
         return panel;
     }
@@ -435,22 +396,10 @@ public class FormLaporanLaba extends JFrame {
         
         // Update summary
         double labaBersih = totalPendapatan - totalModal;
-        double marginTotal = totalModal > 0 ? (labaBersih / totalModal) * 100 : 0;
         
         lblTotalPendapatan.setText(String.format("Rp %,d", (long)totalPendapatan));
         lblTotalModal.setText(String.format("Rp %,d", (long)totalModal));
         lblLabaBersih.setText(String.format("Rp %,d", (long)labaBersih));
-        lblMarginPersen.setText(String.format("%.1f%%", marginTotal));
-        progressMargin.setValue((int)Math.min(marginTotal, 100));
-        
-        // Update warna progress bar berdasarkan margin
-        if (marginTotal < 10) {
-            progressMargin.setForeground(new Color(231, 76, 60));
-        } else if (marginTotal < 20) {
-            progressMargin.setForeground(new Color(230, 126, 34));
-        } else {
-            progressMargin.setForeground(new Color(46, 204, 113));
-        }
         
         // Update chart
         updateChart();
@@ -461,18 +410,8 @@ public class FormLaporanLaba extends JFrame {
             return;
         }
         
-        // Remove semua komponen dari chartPanel kecuali button
-        Component[] components = chartPanel.getComponents();
-        for (Component comp : components) {
-            if (!(comp instanceof JPanel && ((JPanel)comp).getComponentCount() > 0 
-                  && ((JPanel)comp).getComponent(0) instanceof JButton)) {
-                chartPanel.remove(comp);
-            }
-        }
-        
-        if (currentChartPanel != null) {
-            chartPanel.remove(currentChartPanel);
-        }
+        // Clear the chart content panel
+        chartContentPanel.removeAll();
         
         // Buat chart sesuai tipe
         JFreeChart chart;
@@ -485,9 +424,9 @@ public class FormLaporanLaba extends JFrame {
         currentChartPanel = new ChartPanel(chart);
         currentChartPanel.setPreferredSize(new Dimension(450, 500));
         
-        chartPanel.add(currentChartPanel, BorderLayout.CENTER);
-        chartPanel.revalidate();
-        chartPanel.repaint();
+        chartContentPanel.add(currentChartPanel, BorderLayout.CENTER);
+        chartContentPanel.revalidate();
+        chartContentPanel.repaint();
     }
     
     private JFreeChart createBarChart() {
@@ -581,7 +520,7 @@ public class FormLaporanLaba extends JFrame {
         PiePlot plot = (PiePlot) chart.getPlot();
         plot.setBackgroundPaint(new Color(248, 249, 250));
         plot.setOutlinePaint(null);
-        plot.setLabelFont(new Font("Arial", Font.PLAIN, 11));
+        plot.setLabelFont(new Font("Segoe UI", Font.PLAIN, 11));
         
         // Custom colors
         Color[] colors = {
@@ -609,9 +548,9 @@ public class FormLaporanLaba extends JFrame {
         isPieChart = !isPieChart;
         
         if (isPieChart) {
-            btnChartType.setText("🔄 Ganti ke Bar Chart");
+            btnChartType.setText("Ganti ke Bar Chart");
         } else {
-            btnChartType.setText("🔄 Ganti ke Pie Chart");
+            btnChartType.setText("Ganti ke Pie Chart");
         }
         
         updateChart();
@@ -621,12 +560,12 @@ public class FormLaporanLaba extends JFrame {
         new FormAnalisisMargin(this).setVisible(true);
     }
     
-    private void exportReport() {
-        JOptionPane.showMessageDialog(this,
-            "Fitur Export akan segera hadir!",
-            "Info",
-            JOptionPane.INFORMATION_MESSAGE);
-    }
+//    private void exportReport() {
+//        JOptionPane.showMessageDialog(this,
+//            "Fitur Export akan segera hadir!",
+//            "Info",
+//            JOptionPane.INFORMATION_MESSAGE);
+//    }
     
     // Helper class
     class ProdukLaba {
@@ -657,14 +596,14 @@ public class FormLaporanLaba extends JFrame {
                     if (!isSelected) {
                         if (margin > 40) {
                             c.setForeground(new Color(39, 174, 96));
-                            c.setFont(new Font("Arial", Font.BOLD, 12));
+                            c.setFont(new Font("Segoe UI", Font.BOLD, 12));
                         } else if (margin > 20) {
                             c.setForeground(new Color(41, 128, 185));
                         } else if (margin > 10) {
                             c.setForeground(new Color(243, 156, 18));
                         } else {
                             c.setForeground(new Color(192, 57, 43));
-                            c.setFont(new Font("Arial", Font.BOLD, 12));
+                            c.setFont(new Font("Segoe UI", Font.BOLD, 12));
                         }
                     }
                 } catch (Exception e) {

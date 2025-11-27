@@ -107,7 +107,7 @@ public class LoginForm extends JFrame {
             e.printStackTrace();
         }
         
-        lblTitle = new JLabel("TOKO BANGUNAN MAJU JAYA");
+        lblTitle = new JLabel("TOKO BANGUNAN WARNER");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblTitle.setForeground(new Color(52, 73, 94));
         lblTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
