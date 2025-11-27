@@ -84,12 +84,12 @@ public class AdminDashboard extends JFrame {
         );
         
         // Card 3: Transaksi
-        JPanel cardTransaksi = createDashboardCard(
-            "Transaksi",
-            "Proses penjualan kasir",
-            new Color(155, 89, 182),
-            e -> openTransaksi()
-        );
+//        JPanel cardTransaksi = createDashboardCard(
+//            "Transaksi",
+//            "Proses penjualan kasir",
+//            new Color(155, 89, 182),
+//            e -> openTransaksi()
+//        );
         
         // Card 4: Laporan
         JPanel cardLaporan = createDashboardCard(
@@ -117,7 +117,7 @@ public class AdminDashboard extends JFrame {
         
         panelContent.add(cardProduk);
         panelContent.add(cardStok);
-        panelContent.add(cardTransaksi);
+//        panelContent.add(cardTransaksi);
         panelContent.add(cardLaporan);
         panelContent.add(cardKategori);
         panelContent.add(cardPengaturan);

@@ -3,6 +3,8 @@ package view;
 import model.*;
 import javax.swing.*;
 import javax.swing.table.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.NumberFormat;
@@ -11,26 +13,28 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 /**
  * Form Transaksi Penjualan (POS) dengan UI Grid Produk - Full Screen Version
  * Stok ditampilkan jelas di bawah harga produk.
+ * 🔍 Fitur Live Search ditambahkan.
  */
 public class FormTransaksi extends JFrame {
     private User currentUser;
     private JPanel productGridPanel;
     private JTable tableKeranjang;
     private DefaultTableModel tableKeranjangModel;
-    private JTextField txtBayar;
+    private JTextField txtBayar, txtSearch;
     private JLabel lblTotal, lblKembalian, lblKodeTransaksi;
     private JButton btnBatal, btnSimpan;
     private JRadioButton rbTunai, rbQRIS, rbTransfer;
     private ButtonGroup paymentGroup;
-    private JPanel paymentMethodPanel;
     private double totalBelanja = 0;
     private List<ItemKeranjang> keranjang = new ArrayList<>();
     private NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
     private String metodePembayaran = "Tunai";
+    private List<Produk> allProducts;
 
     // Modern color scheme
     private final Color PRIMARY_COLOR = new Color(41, 128, 185);
@@ -43,30 +47,68 @@ public class FormTransaksi extends JFrame {
     public FormTransaksi(JFrame parent, User user) {
         this.currentUser = user;
         initComponents();
-        loadProducts();
+        loadAllProducts();
+        displayProducts(allProducts);
         generateKodeTransaksi();
         setLocationRelativeTo(parent);
     }
 
     private void initComponents() {
         setTitle("Point of Sale - Transaksi");
-        setExtendedState(JFrame.MAXIMIZED_BOTH); // Full Screen
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        // Main Panel
-        JPanel mainPanel = new JPanel(new BorderLayout(0, 0));
+        JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(BACKGROUND_COLOR);
         setContentPane(mainPanel);
 
-        // Panel Kiri: Grid Produk
+        // Panel Pencarian
+        JPanel searchPanel = new JPanel(new BorderLayout());
+        searchPanel.setBackground(BACKGROUND_COLOR);
+        searchPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+
+        txtSearch = new JTextField();
+        txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        txtSearch.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+            BorderFactory.createEmptyBorder(8, 12, 8, 12)
+        ));
+        txtSearch.setPreferredSize(new Dimension(300, 40));
+        txtSearch.setForeground(DARK_COLOR);
+        txtSearch.setBackground(Color.WHITE);
+        txtSearch.setCaretColor(DARK_COLOR);
+        txtSearch.setToolTipText("Cari produk berdasarkan nama");
+
+        JLabel lblSearchIcon = new JLabel("🔍");
+        lblSearchIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
+        lblSearchIcon.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+
+        JPanel searchWrapper = new JPanel(new BorderLayout());
+        searchWrapper.setBackground(Color.WHITE);
+        searchWrapper.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
+        searchWrapper.add(lblSearchIcon, BorderLayout.WEST);
+        searchWrapper.add(txtSearch, BorderLayout.CENTER);
+
+        searchPanel.add(searchWrapper, BorderLayout.WEST);
+
+        txtSearch.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { filterProducts(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { filterProducts(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { filterProducts(); }
+        });
+
+        // Panel Grid Produk
         productGridPanel = new JPanel(new WrapLayout(FlowLayout.LEFT, 15, 15));
         productGridPanel.setBackground(Color.WHITE);
         productGridPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         JScrollPane scrollProduct = new JScrollPane(productGridPanel);
         scrollProduct.setBorder(null);
-        scrollProduct.getVerticalScrollBar().setUnitIncrement(16);
         scrollProduct.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollProduct.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollProduct.getVerticalScrollBar().setUnitIncrement(16);
 
         scrollProduct.addComponentListener(new ComponentAdapter() {
             @Override
@@ -76,21 +118,43 @@ public class FormTransaksi extends JFrame {
             }
         });
 
-        // Panel Kanan: Keranjang + Pembayaran
-        JPanel rightPanel = new JPanel(new BorderLayout(0, 0));
+        // Panel Kanan: Keranjang + Bayar
+        JPanel rightPanel = new JPanel(new BorderLayout());
         rightPanel.setPreferredSize(new Dimension(750, 0));
         rightPanel.setBackground(LIGHT_COLOR);
 
-        JPanel headerPanel = createHeaderPanel();
-        JPanel cartPanel = createCartPanel();
-        JPanel paymentPanel = createPaymentPanel();
+        rightPanel.add(createHeaderPanel(), BorderLayout.NORTH);
+        rightPanel.add(createCartPanel(), BorderLayout.CENTER);
+        rightPanel.add(createPaymentPanel(), BorderLayout.SOUTH);
 
-        rightPanel.add(headerPanel, BorderLayout.NORTH);
-        rightPanel.add(cartPanel, BorderLayout.CENTER);
-        rightPanel.add(paymentPanel, BorderLayout.SOUTH);
-
+        mainPanel.add(searchPanel, BorderLayout.NORTH);
         mainPanel.add(scrollProduct, BorderLayout.CENTER);
         mainPanel.add(rightPanel, BorderLayout.EAST);
+    }
+
+    private void loadAllProducts() {
+        allProducts = Produk.getAllProduk();
+    }
+
+    private void filterProducts() {
+        String keyword = txtSearch.getText().trim().toLowerCase();
+        if (keyword.isEmpty()) {
+            displayProducts(allProducts);
+        } else {
+            List<Produk> filtered = allProducts.stream()
+                .filter(p -> p.getNamaProduk().toLowerCase().contains(keyword))
+                .collect(Collectors.toList());
+            displayProducts(filtered);
+        }
+    }
+
+    private void displayProducts(List<Produk> productsToShow) {
+        productGridPanel.removeAll();
+        for (Produk produk : productsToShow) {
+            productGridPanel.add(new ProductCard(produk));
+        }
+        productGridPanel.revalidate();
+        productGridPanel.repaint();
     }
 
     private JPanel createHeaderPanel() {
@@ -114,9 +178,8 @@ public class FormTransaksi extends JFrame {
     }
 
     private JPanel createCartPanel() {
-        JPanel panel = new JPanel(new BorderLayout(0, 0));
+        JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
         String[] columns = {"Produk", "Satuan", "Qty", "Harga", "Subtotal"};
         tableKeranjangModel = new DefaultTableModel(columns, 0) {
@@ -153,7 +216,7 @@ public class FormTransaksi extends JFrame {
         btnPlus.setForeground(Color.WHITE);
         btnPlus.setFocusPainted(false);
         btnPlus.setBorderPainted(false);
-        btnPlus.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnPlus.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnPlus.addActionListener(e -> tambahQtyItem());
 
         JButton btnMinus = new JButton("- KURANG QTY");
@@ -163,7 +226,7 @@ public class FormTransaksi extends JFrame {
         btnMinus.setForeground(Color.WHITE);
         btnMinus.setFocusPainted(false);
         btnMinus.setBorderPainted(false);
-        btnMinus.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnMinus.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnMinus.addActionListener(e -> kurangiQtyItem());
 
         JButton btnDelete = new JButton("✖ HAPUS ITEM");
@@ -173,7 +236,7 @@ public class FormTransaksi extends JFrame {
         btnDelete.setForeground(Color.WHITE);
         btnDelete.setFocusPainted(false);
         btnDelete.setBorderPainted(false);
-        btnDelete.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnDelete.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnDelete.addActionListener(e -> hapusItem());
 
         controlPanel.add(btnPlus);
@@ -188,10 +251,7 @@ public class FormTransaksi extends JFrame {
     private void tambahQtyItem() {
         int selectedRow = tableKeranjang.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this,
-                "Pilih item di tabel terlebih dahulu!",
-                "Info",
-                JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Pilih item di tabel terlebih dahulu!", "Info", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         ItemKeranjang item = keranjang.get(selectedRow);
@@ -215,10 +275,7 @@ public class FormTransaksi extends JFrame {
     private void kurangiQtyItem() {
         int selectedRow = tableKeranjang.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this,
-                "Pilih item di tabel terlebih dahulu!",
-                "Info",
-                JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Pilih item di tabel terlebih dahulu!", "Info", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         ItemKeranjang item = keranjang.get(selectedRow);
@@ -244,10 +301,7 @@ public class FormTransaksi extends JFrame {
     private void hapusItem() {
         int selectedRow = tableKeranjang.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this,
-                "Pilih item di tabel terlebih dahulu!",
-                "Info",
-                JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Pilih item di tabel terlebih dahulu!", "Info", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         int confirm = JOptionPane.showConfirmDialog(this,
@@ -397,19 +451,9 @@ public class FormTransaksi extends JFrame {
         button.setBorderPainted(false);
         button.setFocusPainted(false);
         button.setOpaque(true);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         button.setBackground(bgColor);
         return button;
-    }
-
-    private void loadProducts() {
-        List<Produk> produkList = Produk.getAllProduk();
-        productGridPanel.removeAll();
-        for (Produk produk : produkList) {
-            productGridPanel.add(new ProductCard(produk));
-        }
-        productGridPanel.revalidate();
-        productGridPanel.repaint();
     }
 
     public void tambahKeKeranjang(Produk produk, SatuanJual satuan, double qty) {
@@ -473,7 +517,7 @@ public class FormTransaksi extends JFrame {
             totalBelanja += item.subtotal;
         }
         lblTotal.setText(currencyFormat.format(totalBelanja));
-        if (metodePembayaran.equals("QRIS") || metodePembayaran.equals("Transfer")) {
+        if ("QRIS".equals(metodePembayaran) || "Transfer".equals(metodePembayaran)) {
             txtBayar.setText(String.valueOf((long)totalBelanja));
         }
         hitungKembalian();
@@ -488,7 +532,7 @@ public class FormTransaksi extends JFrame {
             }
             double bayar = Double.parseDouble(bayarStr);
             double kembalian = bayar - totalBelanja;
-            if (metodePembayaran.equals("QRIS") || metodePembayaran.equals("Transfer")) {
+            if ("QRIS".equals(metodePembayaran) || "Transfer".equals(metodePembayaran)) {
                 kembalian = 0;
             }
             lblKembalian.setText(currencyFormat.format(kembalian));
@@ -517,7 +561,7 @@ public class FormTransaksi extends JFrame {
             }
             double bayar = Double.parseDouble(bayarStr);
             double kembalian = bayar - totalBelanja;
-            if (metodePembayaran.equals("QRIS") || metodePembayaran.equals("Transfer")) {
+            if ("QRIS".equals(metodePembayaran) || "Transfer".equals(metodePembayaran)) {
                 kembalian = 0;
             } else if (kembalian < 0) {
                 JOptionPane.showMessageDialog(this, "Uang bayar kurang!", "Validasi", JOptionPane.WARNING_MESSAGE);
@@ -557,6 +601,7 @@ public class FormTransaksi extends JFrame {
                 txtBayar.setEnabled(true);
                 updateTotal();
                 generateKodeTransaksi();
+                txtSearch.setText("");
             } else {
                 JOptionPane.showMessageDialog(this, "Gagal menyimpan transaksi!", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -580,6 +625,7 @@ public class FormTransaksi extends JFrame {
             txtBayar.setEnabled(true);
             updateTotal();
             generateKodeTransaksi();
+            txtSearch.setText("");
         }
     }
 
@@ -594,7 +640,7 @@ public class FormTransaksi extends JFrame {
         strukPanel.setBackground(Color.WHITE);
         strukPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
 
-        JLabel lblNamaToko = new JLabel("TOKO BANGUNAN MAJU JAYA");
+        JLabel lblNamaToko = new JLabel("TOKO BANGUNAN WARNER");
         lblNamaToko.setFont(new Font("Monospaced", Font.BOLD, 16));
         lblNamaToko.setAlignmentX(Component.CENTER_ALIGNMENT);
         JLabel lblAlamat = new JLabel("Jl. Raya No. 123, Jakarta");
@@ -729,31 +775,28 @@ public class FormTransaksi extends JFrame {
         strukDialog.setVisible(true);
     }
 
-    // --- Inner Classes ---
     class ProductCard extends JPanel {
         private Produk produk;
 
         public ProductCard(Produk produk) {
             this.produk = produk;
-            setPreferredSize(new Dimension(180, 150)); // ↑ Tinggi dinaikkan
+            setPreferredSize(new Dimension(180, 150));
             setLayout(new BorderLayout());
             setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1));
             setBackground(Color.WHITE);
-            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
             JPanel infoPanel = new JPanel();
             infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
             infoPanel.setOpaque(false);
             infoPanel.setBorder(BorderFactory.createEmptyBorder(12, 10, 12, 10));
 
-            // Nama produk
             JLabel nameLabel = new JLabel("<html><center>" + produk.getNamaProduk() + "</center></html>");
             nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
             nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
             infoPanel.add(nameLabel);
             infoPanel.add(Box.createVerticalStrut(8));
 
-            // Harga
             String hargaText = "Rp 0";
             if (!produk.getDaftarSatuan().isEmpty()) {
                 double harga = produk.getDaftarSatuan().get(0).getHargaJual();
@@ -766,12 +809,11 @@ public class FormTransaksi extends JFrame {
             infoPanel.add(priceLabel);
             infoPanel.add(Box.createVerticalStrut(6));
 
-            // ✅ STOK: Ditampilkan di bawah harga, lebih jelas
             double stok = produk.getStokDasar();
             String stokText = String.format("Stok: %.0f %s", stok, produk.getSatuanDasar());
             JLabel stokLabel = new JLabel(stokText);
-            stokLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12)); // Ukuran sedikit lebih besar
-            stokLabel.setForeground(stok <= 5 ? DANGER_COLOR : Color.GRAY); // Merah jika stok ≤ 5
+            stokLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            stokLabel.setForeground(stok <= 5 ? DANGER_COLOR : Color.GRAY);
             stokLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
             infoPanel.add(stokLabel);
 
@@ -799,7 +841,8 @@ public class FormTransaksi extends JFrame {
     }
 }
 
-// Helper class
+// === Helper Classes ===
+
 class ItemKeranjang {
     Produk produk;
     SatuanJual satuan;
@@ -807,7 +850,6 @@ class ItemKeranjang {
     double subtotal;
 }
 
-// Helper class untuk WrapLayout
 class WrapLayout extends FlowLayout {
     public WrapLayout() { super(); }
     public WrapLayout(int align) { super(align); }
@@ -862,7 +904,6 @@ class WrapLayout extends FlowLayout {
             addRow(dim, rowWidth, rowHeight);
             dim.width += horizontalInsetsAndGap;
             dim.height += insets.top + insets.bottom + vgap * 2;
-
             return dim;
         }
     }

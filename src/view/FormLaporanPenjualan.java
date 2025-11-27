@@ -73,7 +73,7 @@ public class FormLaporanPenjualan extends JFrame {
         panel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
         
         JLabel lblTitle = new JLabel("📊 LAPORAN PENJUALAN");
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 24));
+        lblTitle.setFont(new Font("Segoe UI Emoji", Font.BOLD, 24));
         lblTitle.setForeground(Color.WHITE);
         
         JLabel lblSubtitle = new JLabel("Analisis Transaksi & Pendapatan");

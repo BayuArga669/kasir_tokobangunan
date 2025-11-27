@@ -2,9 +2,11 @@ view.FormKategori
 view.FormLaporanStok
 view.FormLaporanShift
 view.FormLihatStok
-view.FormLaporanPenjualan
 view.FormInfoToko
 view.FormGantiPassword
+view.FormLaporanPenjualan
 view.FormLaporanLaba
+view.FormLaporanStok$FormGantiPassword
 view.FormRiwayatTransaksi
 view.FormStokOpname
+view.FormLaporanStok$FormInfoToko

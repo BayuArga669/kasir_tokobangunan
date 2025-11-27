@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 /**
- * Form Master Produk dengan CRUD Form di atas DataGrid
+ * Form Master Produk dengan CRUD Form di atas DataGrid - DENGAN HARGA BELI
  */
 public class FormProduk extends JFrame {
     
@@ -17,7 +17,7 @@ public class FormProduk extends JFrame {
     private User currentUser;
     
     // Form Components
-    private JTextField txtId, txtNamaProduk, txtStok;
+    private JTextField txtId, txtNamaProduk, txtStok, txtHargaBeli;  // TAMBAH txtHargaBeli
     private JComboBox<Kategori> cmbKategori;
     private JComboBox<String> cmbSatuanDasar;
     private JButton btnSimpan, btnUpdate, btnBatal, btnHapus;
@@ -107,7 +107,7 @@ public class FormProduk extends JFrame {
         cmbSatuanDasar.setPreferredSize(new Dimension(120, 30));
         panelFields.add(cmbSatuanDasar, gbc);
         
-        // Row 3: Stok
+        // Row 3: Stok Awal & Harga Beli (BARIS BARU)
         gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0.1;
         panelFields.add(new JLabel("Stok Awal:*"), gbc);
         
@@ -115,6 +115,24 @@ public class FormProduk extends JFrame {
         txtStok = new JTextField("0");
         txtStok.setPreferredSize(new Dimension(150, 30));
         panelFields.add(txtStok, gbc);
+        
+        // TAMBAHAN: Harga Beli
+        gbc.gridx = 2; gbc.gridy = 2; gbc.weightx = 0.1;
+        JLabel lblHargaBeli = new JLabel("Harga Beli (Rp):*");
+        lblHargaBeli.setFont(new Font("Arial", Font.BOLD, 12));
+        panelFields.add(lblHargaBeli, gbc);
+        
+        gbc.gridx = 3; gbc.gridy = 2; gbc.weightx = 0.3;
+        txtHargaBeli = new JTextField("0");
+        txtHargaBeli.setPreferredSize(new Dimension(150, 30));
+        panelFields.add(txtHargaBeli, gbc);
+        
+        // Info label untuk harga beli
+        gbc.gridx = 4; gbc.gridy = 2; gbc.weightx = 0.3; gbc.gridwidth = 2;
+        JLabel lblInfoHargaBeli = new JLabel("(Per satuan dasar)");
+        lblInfoHargaBeli.setFont(new Font("Arial", Font.ITALIC, 11));
+        lblInfoHargaBeli.setForeground(Color.GRAY);
+        panelFields.add(lblInfoHargaBeli, gbc);
         
         // Form Buttons
         JPanel panelFormButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
@@ -217,8 +235,8 @@ public class FormProduk extends JFrame {
         tableProduk.getColumnModel().getColumn(2).setPreferredWidth(100);
         tableProduk.getColumnModel().getColumn(3).setPreferredWidth(90);
         tableProduk.getColumnModel().getColumn(4).setPreferredWidth(80);
-        tableProduk.getColumnModel().getColumn(5).setPreferredWidth(100); // Harga Beli
-        tableProduk.getColumnModel().getColumn(6).setPreferredWidth(100); // Jumlah Satuan
+        tableProduk.getColumnModel().getColumn(5).setPreferredWidth(100);
+        tableProduk.getColumnModel().getColumn(6).setPreferredWidth(100);
 
         // Double click to edit
         tableProduk.addMouseListener(new MouseAdapter() {
@@ -274,7 +292,7 @@ public class FormProduk extends JFrame {
                 p.getNamaKategori(),
                 p.getSatuanDasar(),
                 String.format("%.2f", p.getStokDasar()),
-                String.format("Rp %,.0f", p.getHargaBeli()), // TAMBAH INI
+                String.format("Rp %,.0f", p.getHargaBeli()),
                 p.getDaftarSatuan().size() + " satuan"
             };
             tableModel.addRow(row);
@@ -298,7 +316,7 @@ public class FormProduk extends JFrame {
                 p.getNamaKategori(),
                 p.getSatuanDasar(),
                 String.format("%.2f", p.getStokDasar()),
-                String.format("Rp %,.0f", p.getHargaBeli()), // TAMBAH INI
+                String.format("Rp %,.0f", p.getHargaBeli()),
                 p.getDaftarSatuan().size() + " satuan"
             };
             tableModel.addRow(row);
@@ -321,8 +339,15 @@ public class FormProduk extends JFrame {
         
         try {
             double stok = Double.parseDouble(txtStok.getText().trim());
+            double hargaBeli = Double.parseDouble(txtHargaBeli.getText().trim().replaceAll("[^0-9.]", ""));
+            
             if (stok < 0) {
                 JOptionPane.showMessageDialog(this, "Stok tidak boleh negatif!", "Validasi", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
+            if (hargaBeli < 0) {
+                JOptionPane.showMessageDialog(this, "Harga beli tidak boleh negatif!", "Validasi", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             
@@ -332,13 +357,14 @@ public class FormProduk extends JFrame {
             produk.setKategoriId(((Kategori) cmbKategori.getSelectedItem()).getId());
             produk.setSatuanDasar((String) cmbSatuanDasar.getSelectedItem());
             produk.setStokDasar(stok);
+            produk.setHargaBeli(hargaBeli);  // SET HARGA BELI
             
             // Buat minimal 1 satuan jual default
             List<SatuanJual> satuanList = new ArrayList<>();
             SatuanJual satuanDefault = new SatuanJual();
             satuanDefault.setNamaSatuan((String) cmbSatuanDasar.getSelectedItem());
             satuanDefault.setKonversiKeDasar(1.0);
-            satuanDefault.setHargaJual(0.0); // Harga bisa diisi kemudian
+            satuanDefault.setHargaJual(hargaBeli * 1.3); // Default markup 30%
             satuanDefault.setBarcode(null);
             satuanList.add(satuanDefault);
             produk.setDaftarSatuan(satuanList);
@@ -346,7 +372,9 @@ public class FormProduk extends JFrame {
             // Save
             if (Produk.tambahProduk(produk)) {
                 JOptionPane.showMessageDialog(this,
-                    "Produk berhasil ditambahkan!\nSilakan kelola harga satuan jual.",
+                    "Produk berhasil ditambahkan!\n" +
+                    "Harga Beli: Rp " + String.format("%,.0f", hargaBeli) + "\n" +
+                    "Silakan kelola harga satuan jual.",
                     "Sukses",
                     JOptionPane.INFORMATION_MESSAGE);
                 loadData();
@@ -359,7 +387,7 @@ public class FormProduk extends JFrame {
             }
             
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Format stok tidak valid!", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Format angka tidak valid!", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
     
@@ -387,7 +415,7 @@ public class FormProduk extends JFrame {
                 return;
             }
             
-            // Update produk
+            // Update produk (NOTE: Harga beli akan diupdate dari barang masuk)
             if (Produk.updateProduk(selectedProdukId, 
                     txtNamaProduk.getText().trim(),
                     ((Kategori) cmbKategori.getSelectedItem()).getId(),
@@ -395,7 +423,9 @@ public class FormProduk extends JFrame {
                     stok)) {
                 
                 JOptionPane.showMessageDialog(this,
-                    "Produk berhasil diupdate!",
+                    "Produk berhasil diupdate!\n\n" +
+                    "Catatan: Harga beli akan diupdate otomatis\n" +
+                    "saat Anda melakukan penambahan stok (barang masuk).",
                     "Sukses",
                     JOptionPane.INFORMATION_MESSAGE);
                 loadData();
@@ -456,6 +486,7 @@ public class FormProduk extends JFrame {
             txtId.setText(String.valueOf(produk.getId()));
             txtNamaProduk.setText(produk.getNamaProduk());
             txtStok.setText(String.format("%.2f", produk.getStokDasar()));
+            txtHargaBeli.setText(String.format("%.0f", produk.getHargaBeli()));  // LOAD HARGA BELI
             
             // Set kategori
             for (int i = 0; i < cmbKategori.getItemCount(); i++) {
@@ -494,6 +525,7 @@ public class FormProduk extends JFrame {
         txtId.setText("");
         txtNamaProduk.setText("");
         txtStok.setText("0");
+        txtHargaBeli.setText("0");  // CLEAR HARGA BELI
         cmbKategori.setSelectedIndex(0);
         cmbSatuanDasar.setSelectedIndex(0);
         
@@ -505,6 +537,7 @@ public class FormProduk extends JFrame {
         txtNamaProduk.requestFocus();
     }
 }
+
 
 /**
  * Dialog Kelola Harga & Satuan Jual

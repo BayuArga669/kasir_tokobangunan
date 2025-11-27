@@ -88,7 +88,7 @@ public class FormLaporanLaba extends JFrame {
         panel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
         
         JLabel lblTitle = new JLabel("💹 LAPORAN LABA RUGI");
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 24));
+        lblTitle.setFont(new Font("Segoe UI Emoji", Font.BOLD, 24));
         lblTitle.setForeground(Color.WHITE);
         
         JLabel lblSubtitle = new JLabel("Analisis Keuntungan & Margin Profit");
@@ -131,7 +131,7 @@ public class FormLaporanLaba extends JFrame {
         btnTampilkan.setBackground(new Color(46, 204, 113));
         btnTampilkan.setForeground(Color.WHITE);
         btnTampilkan.setFocusPainted(false);
-        btnTampilkan.setFont(new Font("Arial", Font.BOLD, 12));
+        btnTampilkan.setFont(new Font("Segoe UI Emoji", Font.BOLD, 12));
         btnTampilkan.addActionListener(e -> loadLaporan());
         
         btnDetail = new JButton("📊 ANALISIS MARGIN");
@@ -139,7 +139,7 @@ public class FormLaporanLaba extends JFrame {
         btnDetail.setBackground(new Color(52, 152, 219));
         btnDetail.setForeground(Color.WHITE);
         btnDetail.setFocusPainted(false);
-        btnDetail.setFont(new Font("Arial", Font.BOLD, 12));
+        btnDetail.setFont(new Font("Segoe UI Emoji", Font.BOLD, 12));
         btnDetail.addActionListener(e -> openAnalisisMargin());
         
         btnExport = new JButton("📄 EXPORT");
@@ -147,7 +147,7 @@ public class FormLaporanLaba extends JFrame {
         btnExport.setBackground(new Color(230, 126, 34));
         btnExport.setForeground(Color.WHITE);
         btnExport.setFocusPainted(false);
-        btnExport.setFont(new Font("Arial", Font.BOLD, 12));
+        btnExport.setFont(new Font("Segoe UI Emoji", Font.BOLD, 12));
         btnExport.addActionListener(e -> exportReport());
         
         panel.add(lblPeriode);
@@ -170,6 +170,7 @@ public class FormLaporanLaba extends JFrame {
         // Card 1: Total Pendapatan
         JPanel card1 = createSummaryCard("Total Pendapatan", "Rp 0", new Color(52, 152, 219), "💵");
         lblTotalPendapatan = (JLabel) ((JPanel)card1.getComponent(0)).getComponent(2);
+        
         
         // Card 2: Total Modal
         JPanel card2 = createSummaryCard("Total Modal", "Rp 0", new Color(231, 76, 60), "💸");
@@ -240,7 +241,7 @@ public class FormLaporanLaba extends JFrame {
         content.setBackground(new Color(155, 89, 182));
         
         JLabel lblIcon = new JLabel("📈");
-        lblIcon.setFont(new Font("Arial", Font.PLAIN, 32));
+        lblIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 32));
         lblIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         JLabel lblTitle = new JLabel("Margin Profit");
@@ -330,7 +331,7 @@ public class FormLaporanLaba extends JFrame {
         
         // Tombol ganti tipe chart
         btnChartType = new JButton("🔄 Ganti ke Pie Chart");
-        btnChartType.setFont(new Font("Arial", Font.BOLD, 11));
+        btnChartType.setFont(new Font("Segoe UI Emoji", Font.BOLD, 11));
         btnChartType.setBackground(new Color(52, 152, 219));
         btnChartType.setForeground(Color.WHITE);
         btnChartType.setFocusPainted(false);
