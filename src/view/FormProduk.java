@@ -17,7 +17,7 @@ public class FormProduk extends JFrame {
     private User currentUser;
     
     // Form Components
-    private JTextField txtId, txtNamaProduk, txtStok, txtHargaBeli;  // TAMBAH txtHargaBeli
+    private JTextField txtId, txtNamaProduk, txtStok, txtHargaBeli;
     private JComboBox<Kategori> cmbKategori;
     private JComboBox<String> cmbSatuanDasar;
     private JButton btnSimpan, btnUpdate, btnBatal, btnHapus;
@@ -107,7 +107,7 @@ public class FormProduk extends JFrame {
         cmbSatuanDasar.setPreferredSize(new Dimension(120, 30));
         panelFields.add(cmbSatuanDasar, gbc);
         
-        // Row 3: Stok Awal & Harga Beli (BARIS BARU)
+        // Row 3: Stok Awal & Harga Beli
         gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0.1;
         panelFields.add(new JLabel("Stok Awal:*"), gbc);
         
@@ -116,7 +116,6 @@ public class FormProduk extends JFrame {
         txtStok.setPreferredSize(new Dimension(150, 30));
         panelFields.add(txtStok, gbc);
         
-        // TAMBAHAN: Harga Beli
         gbc.gridx = 2; gbc.gridy = 2; gbc.weightx = 0.1;
         JLabel lblHargaBeli = new JLabel("Harga Beli (Rp):*");
         lblHargaBeli.setFont(new Font("Arial", Font.BOLD, 12));
@@ -410,22 +409,28 @@ public class FormProduk extends JFrame {
         
         try {
             double stok = Double.parseDouble(txtStok.getText().trim());
+            double hargaBeli = Double.parseDouble(txtHargaBeli.getText().trim().replaceAll("[^0-9.]", ""));
+            
             if (stok < 0) {
                 JOptionPane.showMessageDialog(this, "Stok tidak boleh negatif!", "Validasi", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             
-            // Update produk (NOTE: Harga beli akan diupdate dari barang masuk)
+            if (hargaBeli < 0) {
+                JOptionPane.showMessageDialog(this, "Harga beli tidak boleh negatif!", "Validasi", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
+            // === PERUBAHAN PENTING: Panggil metode updateProduk dengan 6 parameter (termasuk hargaBeli) ===
             if (Produk.updateProduk(selectedProdukId, 
                     txtNamaProduk.getText().trim(),
                     ((Kategori) cmbKategori.getSelectedItem()).getId(),
                     (String) cmbSatuanDasar.getSelectedItem(),
-                    stok)) {
+                    stok,
+                    hargaBeli)) { // Parameter hargaBeli ditambahkan di sini
                 
                 JOptionPane.showMessageDialog(this,
-                    "Produk berhasil diupdate!\n\n" +
-                    "Catatan: Harga beli akan diupdate otomatis\n" +
-                    "saat Anda melakukan penambahan stok (barang masuk).",
+                    "Produk dan harga beli berhasil diupdate!",
                     "Sukses",
                     JOptionPane.INFORMATION_MESSAGE);
                 loadData();
@@ -438,7 +443,7 @@ public class FormProduk extends JFrame {
             }
             
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Format stok tidak valid!", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Format angka tidak valid!", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
     
@@ -538,7 +543,6 @@ public class FormProduk extends JFrame {
     }
 }
 
-
 /**
  * Dialog Kelola Harga & Satuan Jual
  */
@@ -564,7 +568,7 @@ class DialogKelolaHarga extends JDialog {
         panelMain.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         
         // Info Panel
-        JPanel panelInfo = new JPanel(new GridLayout(3, 2, 10, 5));
+        JPanel panelInfo = new JPanel(new GridLayout(4, 2, 10, 5));
         panelInfo.setBorder(BorderFactory.createTitledBorder("Info Produk"));
         panelInfo.add(new JLabel("Produk:"));
         panelInfo.add(new JLabel(produk.getNamaProduk()));
@@ -572,6 +576,8 @@ class DialogKelolaHarga extends JDialog {
         panelInfo.add(new JLabel(produk.getNamaKategori()));
         panelInfo.add(new JLabel("Satuan Dasar:"));
         panelInfo.add(new JLabel(produk.getSatuanDasar() + " (Stok: " + String.format("%.2f", produk.getStokDasar()) + ")"));
+        panelInfo.add(new JLabel("Harga Beli:"));
+        panelInfo.add(new JLabel(String.format("Rp %,.0f", produk.getHargaBeli())));
         
         // Table Satuan Jual
         String[] columns = {"ID", "Nama Satuan", "Konversi ke Dasar", "Harga Jual", "Barcode"};
@@ -721,52 +727,58 @@ class DialogInputSatuan extends JDialog {
         lblInfo.setFont(new Font("Arial", Font.BOLD, 12));
         panelMain.add(lblInfo, gbc);
         
+        // Info Harga Beli
+        gbc.gridy = 1;
+        JLabel lblInfoHarga = new JLabel("Harga Beli: " + String.format("Rp %,.0f", produk.getHargaBeli()));
+        lblInfoHarga.setFont(new Font("Arial", Font.PLAIN, 11));
+        panelMain.add(lblInfoHarga, gbc);
+        
         gbc.gridwidth = 1;
         
         // Nama Satuan
-        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0.3;
+        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0.3;
         JLabel lblNama = new JLabel("Nama Satuan:*");
         lblNama.setFont(new Font("Arial", Font.BOLD, 11));
         panelMain.add(lblNama, gbc);
         
-        gbc.gridx = 1; gbc.gridy = 1; gbc.weightx = 0.7;
+        gbc.gridx = 1; gbc.gridy = 2; gbc.weightx = 0.7;
         txtNamaSatuan = new JTextField();
         txtNamaSatuan.setPreferredSize(new Dimension(200, 30));
         panelMain.add(txtNamaSatuan, gbc);
         
         // Konversi
-        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0.3;
+        gbc.gridx = 0; gbc.gridy = 3; gbc.weightx = 0.3;
         JLabel lblKonversi = new JLabel("Konversi ke Dasar:*");
         lblKonversi.setFont(new Font("Arial", Font.BOLD, 11));
         panelMain.add(lblKonversi, gbc);
         
-        gbc.gridx = 1; gbc.gridy = 2; gbc.weightx = 0.7;
+        gbc.gridx = 1; gbc.gridy = 3; gbc.weightx = 0.7;
         txtKonversi = new JTextField("1");
         txtKonversi.setPreferredSize(new Dimension(200, 30));
         panelMain.add(txtKonversi, gbc);
         
-        gbc.gridx = 1; gbc.gridy = 3; gbc.weightx = 0.7;
+        gbc.gridx = 1; gbc.gridy = 4; gbc.weightx = 0.7;
         JLabel lblKonversiInfo = new JLabel("(1 satuan ini = berapa " + produk.getSatuanDasar() + ")");
         lblKonversiInfo.setFont(new Font("Arial", Font.ITALIC, 10));
         lblKonversiInfo.setForeground(Color.GRAY);
         panelMain.add(lblKonversiInfo, gbc);
         
         // Harga Jual
-        gbc.gridx = 0; gbc.gridy = 4; gbc.weightx = 0.3;
+        gbc.gridx = 0; gbc.gridy = 5; gbc.weightx = 0.3;
         JLabel lblHarga = new JLabel("Harga Jual (Rp):*");
         lblHarga.setFont(new Font("Arial", Font.BOLD, 11));
         panelMain.add(lblHarga, gbc);
         
-        gbc.gridx = 1; gbc.gridy = 4; gbc.weightx = 0.7;
+        gbc.gridx = 1; gbc.gridy = 5; gbc.weightx = 0.7;
         txtHarga = new JTextField("0");
         txtHarga.setPreferredSize(new Dimension(200, 30));
         panelMain.add(txtHarga, gbc);
         
         // Barcode
-        gbc.gridx = 0; gbc.gridy = 5; gbc.weightx = 0.3;
+        gbc.gridx = 0; gbc.gridy = 6; gbc.weightx = 0.3;
         panelMain.add(new JLabel("Barcode:"), gbc);
         
-        gbc.gridx = 1; gbc.gridy = 5; gbc.weightx = 0.7;
+        gbc.gridx = 1; gbc.gridy = 6; gbc.weightx = 0.7;
         txtBarcode = new JTextField();
         txtBarcode.setPreferredSize(new Dimension(200, 30));
         panelMain.add(txtBarcode, gbc);

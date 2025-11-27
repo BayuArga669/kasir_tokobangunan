@@ -494,7 +494,7 @@ public class KasirDashboard extends JFrame {
         JMenuItem itemPenjualan = new JMenuItem("Penjualan Baru");
         JMenuItem itemRiwayat = new JMenuItem("Riwayat Transaksi Saya");
         itemPenjualan.addActionListener(e -> openTransaksi());
-        itemRiwayat.addActionListener(e -> openRiwayatTransaksiKasir());
+//        itemRiwayat.addActionListener(e -> openRiwayatTransaksiKasir());
         menuTransaksi.add(itemPenjualan);
         menuTransaksi.add(itemRiwayat);
         
@@ -533,9 +533,9 @@ public class KasirDashboard extends JFrame {
         loadLaporanHariIni();
     }
     
-    private void openRiwayatTransaksiKasir() {
-        new FormRiwayatTransaksi(this, currentUser).setVisible(true);
-    }
+//    private void openRiwayatTransaksiKasir() {
+//        new FormRiwayatTransaksi(this, currentUser).setVisible(true);
+//    }
     
     private void openProfile() {
         JOptionPane.showMessageDialog(this,

@@ -333,55 +333,67 @@ public class FormLaporanLaba extends JFrame {
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
-        
+
         Date dari = dateFrom.getDate();
         Date sampai = dateTo.getDate();
-        
+
         tableLabaModel.setRowCount(0);
-        
+
         // Ambil semua transaksi dalam periode
         List<Transaksi> transaksiList = Transaksi.getTransaksiByPeriode(dari, sampai);
-        
+
         // Map untuk menyimpan data per produk
         currentProdukLabaMap = new HashMap<>();
-        
+
         double totalPendapatan = 0;
         double totalModal = 0;
-        
+
         for (Transaksi t : transaksiList) {
             List<DetailTransaksi> details = Transaksi.getDetailTransaksi(t.getId());
-            
+
             for (DetailTransaksi detail : details) {
                 int produkId = detail.getProdukId();
-                
+
                 if (!currentProdukLabaMap.containsKey(produkId)) {
                     currentProdukLabaMap.put(produkId, new ProdukLaba(detail.getNamaProduk()));
                 }
-                
+
                 ProdukLaba pl = currentProdukLabaMap.get(produkId);
-                
+
                 // Ambil data produk untuk mendapatkan harga beli
                 Produk produk = Produk.getProdukById(produkId);
                 SatuanJual satuan = SatuanJual.getSatuanById(detail.getSatuanJualId());
-                
+
+                // ✅ PERBAIKAN: Tambahkan pengecekan null
+                if (produk == null || satuan == null) {
+                    System.err.println("Warning: Produk/Satuan tidak ditemukan untuk produk ID: " + produkId);
+                    // Gunakan harga beli default 0 jika produk tidak ditemukan
+                    pl.qty += detail.getQty();
+                    pl.satuan = detail.getNamaSatuan();
+                    pl.pendapatan += detail.getSubtotal();
+                    pl.modal += 0; // Modal tidak bisa dihitung
+                    totalPendapatan += detail.getSubtotal();
+                    continue; // Skip ke item berikutnya
+                }
+
                 double hargaBeliPerSatuan = produk.getHargaBeli() * satuan.getKonversiKeDasar();
                 double modalItem = detail.getQty() * hargaBeliPerSatuan;
-                
+
                 pl.qty += detail.getQty();
                 pl.satuan = detail.getNamaSatuan();
                 pl.pendapatan += detail.getSubtotal();
                 pl.modal += modalItem;
-                
+
                 totalPendapatan += detail.getSubtotal();
                 totalModal += modalItem;
             }
         }
-        
+
         // Tampilkan di tabel
         for (ProdukLaba pl : currentProdukLabaMap.values()) {
             double laba = pl.pendapatan - pl.modal;
             double marginPersen = pl.modal > 0 ? (laba / pl.modal) * 100 : 0;
-            
+
             Object[] row = {
                 pl.namaProduk,
                 String.format("%.0f", pl.qty),
@@ -393,14 +405,14 @@ public class FormLaporanLaba extends JFrame {
             };
             tableLabaModel.addRow(row);
         }
-        
+
         // Update summary
         double labaBersih = totalPendapatan - totalModal;
-        
+
         lblTotalPendapatan.setText(String.format("Rp %,d", (long)totalPendapatan));
         lblTotalModal.setText(String.format("Rp %,d", (long)totalModal));
         lblLabaBersih.setText(String.format("Rp %,d", (long)labaBersih));
-        
+
         // Update chart
         updateChart();
     }

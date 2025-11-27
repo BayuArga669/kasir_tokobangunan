@@ -148,7 +148,7 @@ public class AdminDashboard extends JFrame {
         JMenuItem itemLihatStok = new JMenuItem("Lihat Stok");
         itemBarangMasuk.addActionListener(e -> openBarangMasuk());
 //        itemStokOpname.addActionListener(e -> openStokOpname());
-        itemLihatStok.addActionListener(e -> openLihatStok());
+//        itemLihatStok.addActionListener(e -> openLihatStok());
         menuStok.add(itemBarangMasuk);
 //        menuStok.add(itemStokOpname);
         menuStok.addSeparator();
@@ -159,7 +159,7 @@ public class AdminDashboard extends JFrame {
         JMenuItem itemPenjualan = new JMenuItem("Penjualan Baru");
         JMenuItem itemRiwayat = new JMenuItem("Riwayat Transaksi");
         itemPenjualan.addActionListener(e -> openTransaksi());
-        itemRiwayat.addActionListener(e -> openRiwayatTransaksi());
+//        itemRiwayat.addActionListener(e -> openRiwayatTransaksi());
         menuTransaksi.add(itemPenjualan);
         menuTransaksi.add(itemRiwayat);
         
@@ -278,21 +278,21 @@ public class AdminDashboard extends JFrame {
     }
 
     
-    private void openStokOpname() {
-        new FormStokOpname(this, currentUser).setVisible(true);
-    }
-    
-    private void openLihatStok() {
-        new FormLihatStok(this).setVisible(true);
-    }
-    
+//    private void openStokOpname() {
+//        new FormStokOpname(this, currentUser).setVisible(true);
+//    }
+//    
+//    private void openLihatStok() {
+//        new FormLihatStok(this).setVisible(true);
+//    }
+//    
     private void openTransaksi() {
         new FormTransaksi(this, currentUser).setVisible(true);
     }
     
-    private void openRiwayatTransaksi() {
-        new FormRiwayatTransaksi(this).setVisible(true);
-    }
+//    private void openRiwayatTransaksi() {
+//        new FormRiwayatTransaksi(this).setVisible(true);
+//    }
     
     private void openLaporan() {
         new FormLaporanLaba(this).setVisible(true);
@@ -318,9 +318,7 @@ public class AdminDashboard extends JFrame {
         new FormManajemenUser(this).setVisible(true);
     }
     
-    private void openInfoToko() {
-        new FormInfoToko(this).setVisible(true);
-    }
+//6
     
     private void openProfile() {
         JOptionPane.showMessageDialog(this,
@@ -331,10 +329,10 @@ public class AdminDashboard extends JFrame {
             JOptionPane.INFORMATION_MESSAGE);
     }
     
-    private void openGantiPassword() {
-        new FormGantiPassword(this, currentUser).setVisible(true);
-    }
-    
+//    private void openGantiPassword() {
+//        new FormGantiPassword(this, currentUser).setVisible(true);
+//    }
+//    
     private void logout() {
         int confirm = JOptionPane.showConfirmDialog(this,
             "Yakin ingin logout?",
