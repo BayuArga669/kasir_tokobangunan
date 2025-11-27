@@ -1,0 +1,12 @@
+view.FormKategori
+view.FormLaporanStok
+view.FormLaporanShift
+view.FormLihatStok
+view.FormLaporanPenjualan
+view.FormInfoToko
+view.FormGantiPassword
+view.FormLaporanLaba
+view.FormRiwayatTransaksi
+view.FormBarangMasuk
+view.FormStokOpname
+view.FormManajemenUser
