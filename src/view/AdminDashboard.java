@@ -295,7 +295,7 @@ public class AdminDashboard extends JFrame {
     }
     
     private void openLaporan() {
-        JOptionPane.showMessageDialog(this, "Menu Laporan");
+        new FormLaporanLaba(this).setVisible(true);
     }
     
     private void openLaporanPenjualan() {
