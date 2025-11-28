@@ -378,14 +378,14 @@ class FormLaporanShift extends JDialog {
 /**
  * Form Manajemen User
  */
-class FormManajemenUser extends JDialog {
-    public FormManajemenUser(JFrame parent) {
-        super(parent, "Manajemen User", true);
-        setSize(700, 500);
-        setLocationRelativeTo(parent);
-        JOptionPane.showMessageDialog(this, "Manajemen User");
-    }
-}
+//class FormManajemenUser extends JDialog {
+//    public FormManajemenUser(JFrame parent) {
+//        super(parent, "Manajemen User", true);
+//        setSize(700, 500);
+//        setLocationRelativeTo(parent);
+//        JOptionPane.showMessageDialog(this, "Manajemen User");
+//    }
+//}
 
 /**
  * Form Info Toko

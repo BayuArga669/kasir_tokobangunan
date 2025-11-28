@@ -5,12 +5,13 @@ import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Form Manajemen User dengan Alamat & No Telepon
  */
-class FormManajemenUser extends JDialog {
+public class FormManajemenUser extends JDialog {
     private JTable tableUser;
     private DefaultTableModel tableModel;
     private JButton btnTambah, btnEdit, btnHapus, btnRefresh;
@@ -18,7 +19,7 @@ class FormManajemenUser extends JDialog {
     public FormManajemenUser(JFrame parent) {
         super(parent, "Manajemen User", true);
         initComponents();
-        loadData();
+        loadData(); // Akan selalu menampilkan form, bahkan jika error
         setLocationRelativeTo(parent);
     }
     
@@ -32,6 +33,7 @@ class FormManajemenUser extends JDialog {
         // Title
         JLabel lblTitle = new JLabel("KELOLA DATA USER");
         lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
+        lblTitle.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
         
         // Table
         String[] columns = {"ID", "Username", "Nama Lengkap", "Alamat", "No Telepon", "Role", "Status"};
@@ -92,29 +94,56 @@ class FormManajemenUser extends JDialog {
         panelMain.add(panelButton, BorderLayout.SOUTH);
         
         add(panelMain);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
     }
     
     private void loadData() {
-        tableModel.setRowCount(0);
-        List<User> userList = User.getAllUsers();
+        tableModel.setRowCount(0); // Kosongkan tabel
         
-        for (User u : userList) {
-            Object[] row = {
-                u.getId(),
-                u.getUsername(),
-                u.getNamaLengkap(),
-                u.getAlamat() != null ? u.getAlamat() : "-",
-                u.getNoTelepon() != null ? u.getNoTelepon() : "-",
-                u.getRole(),
-                u.isActive() ? "Aktif" : "Non-aktif"
-            };
-            tableModel.addRow(row);
+        // 💡 PERBAIKAN UTAMA: Tangani error & null
+        try {
+            List<User> userList = User.getAllUsers();
+            
+            // Jika null, ganti dengan list kosong
+            if (userList == null) {
+                userList = new ArrayList<>();
+                System.err.println("Peringatan: User.getAllUsers() mengembalikan null!");
+            }
+            
+            for (User u : userList) {
+                if (u == null) continue; // lewati entri null
+                
+                Object[] row = {
+                    u.getId(),
+                    u.getUsername(),
+                    u.getNamaLengkap(),
+                    u.getAlamat() != null ? u.getAlamat() : "-",
+                    u.getNoTelepon() != null ? u.getNoTelepon() : "-",
+                    u.getRole(),
+                    u != null && u.isActive() ? "Aktif" : "Non-aktif"
+                };
+                tableModel.addRow(row);
+            }
+        } catch (Exception e) {
+            // 🚨 Tampilkan error ke GUI & console
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                "Gagal memuat data user!\n\nDetail error:\n" + e.getMessage(),
+                "Error Saat Memuat Data",
+                JOptionPane.ERROR_MESSAGE);
+            // Tetap lanjutkan — form tetap terbuka!
         }
     }
     
     private void tambahUser() {
-        new DialogTambahUser(this).setVisible(true);
-        loadData();
+        try {
+            DialogTambahUser dialog = new DialogTambahUser(this);
+            dialog.setVisible(true);
+            loadData();
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Gagal membuka form tambah user!", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
     
     private void editUser() {
@@ -127,9 +156,15 @@ class FormManajemenUser extends JDialog {
             return;
         }
         
-        int userId = (int) tableModel.getValueAt(selectedRow, 0);
-        new DialogEditUser(this, userId).setVisible(true);
-        loadData();
+        try {
+            int userId = (int) tableModel.getValueAt(selectedRow, 0);
+            DialogEditUser dialog = new DialogEditUser(this, userId);
+            dialog.setVisible(true);
+            loadData();
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Gagal membuka form edit user!", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
     
     private void hapusUser() {
@@ -151,15 +186,23 @@ class FormManajemenUser extends JDialog {
             JOptionPane.YES_NO_OPTION);
         
         if (confirm == JOptionPane.YES_OPTION) {
-            if (User.deleteUser(userId)) {
+            try {
+                if (User.deleteUser(userId)) {
+                    JOptionPane.showMessageDialog(this,
+                        "User berhasil dihapus!",
+                        "Sukses",
+                        JOptionPane.INFORMATION_MESSAGE);
+                    loadData();
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                        "Gagal menghapus user!",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
                 JOptionPane.showMessageDialog(this,
-                    "User berhasil dihapus!",
-                    "Sukses",
-                    JOptionPane.INFORMATION_MESSAGE);
-                loadData();
-            } else {
-                JOptionPane.showMessageDialog(this,
-                    "Gagal menghapus user!",
+                    "Terjadi kesalahan saat menghapus user!",
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
             }
@@ -196,7 +239,6 @@ class DialogTambahUser extends JDialog {
         gbc.gridx = 0;
         gbc.gridy = 0;
         
-        // Username
         JLabel lblUsername = new JLabel("Username:*");
         lblUsername.setFont(new Font("Arial", Font.BOLD, 13));
         panelMain.add(lblUsername, gbc);
@@ -206,9 +248,7 @@ class DialogTambahUser extends JDialog {
         gbc.gridx = 1;
         panelMain.add(txtUsername, gbc);
         
-        // Password
-        gbc.gridx = 0;
-        gbc.gridy++;
+        gbc.gridx = 0; gbc.gridy++;
         JLabel lblPassword = new JLabel("Password:*");
         lblPassword.setFont(new Font("Arial", Font.BOLD, 13));
         panelMain.add(lblPassword, gbc);
@@ -218,9 +258,7 @@ class DialogTambahUser extends JDialog {
         gbc.gridx = 1;
         panelMain.add(txtPassword, gbc);
         
-        // Konfirmasi Password
-        gbc.gridx = 0;
-        gbc.gridy++;
+        gbc.gridx = 0; gbc.gridy++;
         JLabel lblKonfirm = new JLabel("Konfirmasi Password:*");
         lblKonfirm.setFont(new Font("Arial", Font.BOLD, 13));
         panelMain.add(lblKonfirm, gbc);
@@ -230,9 +268,7 @@ class DialogTambahUser extends JDialog {
         gbc.gridx = 1;
         panelMain.add(txtKonfirmPassword, gbc);
         
-        // Nama Lengkap
-        gbc.gridx = 0;
-        gbc.gridy++;
+        gbc.gridx = 0; gbc.gridy++;
         JLabel lblNama = new JLabel("Nama Lengkap:*");
         lblNama.setFont(new Font("Arial", Font.BOLD, 13));
         panelMain.add(lblNama, gbc);
@@ -242,9 +278,7 @@ class DialogTambahUser extends JDialog {
         gbc.gridx = 1;
         panelMain.add(txtNamaLengkap, gbc);
         
-        // Alamat
-        gbc.gridx = 0;
-        gbc.gridy++;
+        gbc.gridx = 0; gbc.gridy++;
         JLabel lblAlamat = new JLabel("Alamat:");
         lblAlamat.setFont(new Font("Arial", Font.BOLD, 13));
         panelMain.add(lblAlamat, gbc);
@@ -254,9 +288,7 @@ class DialogTambahUser extends JDialog {
         gbc.gridx = 1;
         panelMain.add(txtAlamat, gbc);
         
-        // No Telepon
-        gbc.gridx = 0;
-        gbc.gridy++;
+        gbc.gridx = 0; gbc.gridy++;
         JLabel lblTelepon = new JLabel("No Telepon:");
         lblTelepon.setFont(new Font("Arial", Font.BOLD, 13));
         panelMain.add(lblTelepon, gbc);
@@ -266,9 +298,7 @@ class DialogTambahUser extends JDialog {
         gbc.gridx = 1;
         panelMain.add(txtNoTelepon, gbc);
         
-        // Role
-        gbc.gridx = 0;
-        gbc.gridy++;
+        gbc.gridx = 0; gbc.gridy++;
         JLabel lblRole = new JLabel("Role:*");
         lblRole.setFont(new Font("Arial", Font.BOLD, 13));
         panelMain.add(lblRole, gbc);
@@ -278,7 +308,6 @@ class DialogTambahUser extends JDialog {
         gbc.gridx = 1;
         panelMain.add(cmbRole, gbc);
         
-        // Button Panel
         JPanel panelButton = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 20));
         panelButton.setBackground(Color.WHITE);
         
@@ -314,7 +343,6 @@ class DialogTambahUser extends JDialog {
         String noTelepon = txtNoTelepon.getText().trim();
         String role = cmbRole.getSelectedItem().toString();
         
-        // Validasi
         if (username.isEmpty() || password.isEmpty() || namaLengkap.isEmpty()) {
             JOptionPane.showMessageDialog(this,
                 "Username, Password, dan Nama Lengkap harus diisi!",
@@ -339,18 +367,25 @@ class DialogTambahUser extends JDialog {
             return;
         }
         
-        // Simpan ke database
-        if (User.tambahUser(username, password, role, namaLengkap, 
-                alamat.isEmpty() ? null : alamat, 
-                noTelepon.isEmpty() ? null : noTelepon)) {
+        try {
+            if (User.tambahUser(username, password, role, namaLengkap, 
+                    alamat.isEmpty() ? null : alamat, 
+                    noTelepon.isEmpty() ? null : noTelepon)) {
+                JOptionPane.showMessageDialog(this,
+                    "✓ User berhasil ditambahkan!",
+                    "Sukses",
+                    JOptionPane.INFORMATION_MESSAGE);
+                dispose();
+            } else {
+                JOptionPane.showMessageDialog(this,
+                    "Gagal menambahkan user!\nUsername mungkin sudah digunakan.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
             JOptionPane.showMessageDialog(this,
-                "✓ User berhasil ditambahkan!",
-                "Sukses",
-                JOptionPane.INFORMATION_MESSAGE);
-            dispose();
-        } else {
-            JOptionPane.showMessageDialog(this,
-                "Gagal menambahkan user!\nUsername mungkin sudah digunakan.",
+                "Terjadi kesalahan saat menyimpan user!",
                 "Error",
                 JOptionPane.ERROR_MESSAGE);
         }
@@ -390,7 +425,6 @@ class DialogEditUser extends JDialog {
         gbc.gridx = 0;
         gbc.gridy = 0;
         
-        // Username
         JLabel lblUsername = new JLabel("Username:*");
         lblUsername.setFont(new Font("Arial", Font.BOLD, 13));
         panelMain.add(lblUsername, gbc);
@@ -400,9 +434,7 @@ class DialogEditUser extends JDialog {
         gbc.gridx = 1;
         panelMain.add(txtUsername, gbc);
         
-        // Nama Lengkap
-        gbc.gridx = 0;
-        gbc.gridy++;
+        gbc.gridx = 0; gbc.gridy++;
         JLabel lblNama = new JLabel("Nama Lengkap:*");
         lblNama.setFont(new Font("Arial", Font.BOLD, 13));
         panelMain.add(lblNama, gbc);
@@ -412,9 +444,7 @@ class DialogEditUser extends JDialog {
         gbc.gridx = 1;
         panelMain.add(txtNamaLengkap, gbc);
         
-        // Alamat
-        gbc.gridx = 0;
-        gbc.gridy++;
+        gbc.gridx = 0; gbc.gridy++;
         JLabel lblAlamat = new JLabel("Alamat:");
         lblAlamat.setFont(new Font("Arial", Font.BOLD, 13));
         panelMain.add(lblAlamat, gbc);
@@ -424,9 +454,7 @@ class DialogEditUser extends JDialog {
         gbc.gridx = 1;
         panelMain.add(txtAlamat, gbc);
         
-        // No Telepon
-        gbc.gridx = 0;
-        gbc.gridy++;
+        gbc.gridx = 0; gbc.gridy++;
         JLabel lblTelepon = new JLabel("No Telepon:");
         lblTelepon.setFont(new Font("Arial", Font.BOLD, 13));
         panelMain.add(lblTelepon, gbc);
@@ -436,9 +464,7 @@ class DialogEditUser extends JDialog {
         gbc.gridx = 1;
         panelMain.add(txtNoTelepon, gbc);
         
-        // Role
-        gbc.gridx = 0;
-        gbc.gridy++;
+        gbc.gridx = 0; gbc.gridy++;
         JLabel lblRole = new JLabel("Role:*");
         lblRole.setFont(new Font("Arial", Font.BOLD, 13));
         panelMain.add(lblRole, gbc);
@@ -448,17 +474,13 @@ class DialogEditUser extends JDialog {
         gbc.gridx = 1;
         panelMain.add(cmbRole, gbc);
         
-        // Separator
-        gbc.gridx = 0;
-        gbc.gridy++;
+        gbc.gridx = 0; gbc.gridy++;
         gbc.gridwidth = 2;
         JSeparator separator = new JSeparator();
         gbc.insets = new Insets(15, 5, 15, 5);
         panelMain.add(separator, gbc);
         
-        // Checkbox Ganti Password
-        gbc.gridx = 0;
-        gbc.gridy++;
+        gbc.gridx = 0; gbc.gridy++;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(5, 5, 5, 5);
         chkGantiPassword = new JCheckBox("🔒 Ganti Password");
@@ -467,10 +489,8 @@ class DialogEditUser extends JDialog {
         chkGantiPassword.addActionListener(e -> togglePasswordFields());
         panelMain.add(chkGantiPassword, gbc);
         
-        // Password Baru
         gbc.gridwidth = 1;
-        gbc.gridx = 0;
-        gbc.gridy++;
+        gbc.gridx = 0; gbc.gridy++;
         gbc.insets = new Insets(8, 5, 8, 5);
         JLabel lblPasswordBaru = new JLabel("Password Baru:");
         lblPasswordBaru.setFont(new Font("Arial", Font.BOLD, 13));
@@ -483,9 +503,7 @@ class DialogEditUser extends JDialog {
         gbc.gridx = 1;
         panelMain.add(txtPasswordBaru, gbc);
         
-        // Konfirmasi Password
-        gbc.gridx = 0;
-        gbc.gridy++;
+        gbc.gridx = 0; gbc.gridy++;
         JLabel lblKonfirm = new JLabel("Konfirmasi Password:");
         lblKonfirm.setFont(new Font("Arial", Font.BOLD, 13));
         panelMain.add(lblKonfirm, gbc);
@@ -497,7 +515,6 @@ class DialogEditUser extends JDialog {
         gbc.gridx = 1;
         panelMain.add(txtKonfirmPassword, gbc);
         
-        // Button Panel
         JPanel panelButton = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 20));
         panelButton.setBackground(Color.WHITE);
         
@@ -540,13 +557,20 @@ class DialogEditUser extends JDialog {
     }
     
     private void loadData() {
-        User user = User.getUserById(userId);
-        if (user != null) {
-            txtUsername.setText(user.getUsername());
-            txtNamaLengkap.setText(user.getNamaLengkap());
-            txtAlamat.setText(user.getAlamat() != null ? user.getAlamat() : "");
-            txtNoTelepon.setText(user.getNoTelepon() != null ? user.getNoTelepon() : "");
-            cmbRole.setSelectedItem(user.getRole());
+        try {
+            User user = User.getUserById(userId);
+            if (user != null) {
+                txtUsername.setText(user.getUsername());
+                txtNamaLengkap.setText(user.getNamaLengkap());
+                txtAlamat.setText(user.getAlamat() != null ? user.getAlamat() : "");
+                txtNoTelepon.setText(user.getNoTelepon() != null ? user.getNoTelepon() : "");
+                cmbRole.setSelectedItem(user.getRole());
+            } else {
+                JOptionPane.showMessageDialog(this, "User tidak ditemukan!", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Gagal memuat data user!", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
     
@@ -557,7 +581,6 @@ class DialogEditUser extends JDialog {
         String noTelepon = txtNoTelepon.getText().trim();
         String role = cmbRole.getSelectedItem().toString();
         
-        // Validasi
         if (username.isEmpty() || namaLengkap.isEmpty()) {
             JOptionPane.showMessageDialog(this,
                 "Username dan Nama Lengkap harus diisi!",
@@ -566,65 +589,57 @@ class DialogEditUser extends JDialog {
             return;
         }
         
-        // Jika ganti password
-        if (chkGantiPassword.isSelected()) {
-            String password = new String(txtPasswordBaru.getPassword());
-            String konfirmPassword = new String(txtKonfirmPassword.getPassword());
-            
-            if (password.isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                    "Password baru harus diisi!",
-                    "Validasi",
-                    JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            
-            if (password.length() < 5) {
-                JOptionPane.showMessageDialog(this,
-                    "Password minimal 5 karakter!",
-                    "Validasi",
-                    JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            
-            if (!password.equals(konfirmPassword)) {
-                JOptionPane.showMessageDialog(this,
-                    "Password dan Konfirmasi Password tidak sama!",
-                    "Validasi",
-                    JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            
-            // Update dengan password baru
-            if (User.updatePassword(userId, password)) {
-                // Kemudian update data lainnya
-                updateDataUser(username, namaLengkap, role, alamat, noTelepon);
+        try {
+            if (chkGantiPassword.isSelected()) {
+                String password = new String(txtPasswordBaru.getPassword());
+                String konfirmPassword = new String(txtKonfirmPassword.getPassword());
+                
+                if (password.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Password baru harus diisi!", "Validasi", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                if (password.length() < 5) {
+                    JOptionPane.showMessageDialog(this, "Password minimal 5 karakter!", "Validasi", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                if (!password.equals(konfirmPassword)) {
+                    JOptionPane.showMessageDialog(this, "Password tidak cocok!", "Validasi", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                
+                if (User.updatePassword(userId, password)) {
+                    updateDataUser(username, namaLengkap, role, alamat, noTelepon);
+                } else {
+                    JOptionPane.showMessageDialog(this, "Gagal mengupdate password!", "Error", JOptionPane.ERROR_MESSAGE);
+                }
             } else {
-                JOptionPane.showMessageDialog(this,
-                    "Gagal mengupdate password!",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
+                updateDataUser(username, namaLengkap, role, alamat, noTelepon);
             }
-        } else {
-            // Update tanpa password
-            updateDataUser(username, namaLengkap, role, alamat, noTelepon);
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Terjadi kesalahan saat menyimpan data!", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
     
     private void updateDataUser(String username, String namaLengkap, String role, String alamat, String noTelepon) {
-        if (User.updateUser(userId, username, namaLengkap, role,
-                alamat.isEmpty() ? null : alamat,
-                noTelepon.isEmpty() ? null : noTelepon)) {
-            JOptionPane.showMessageDialog(this,
-                "✓ User berhasil diupdate!",
-                "Sukses",
-                JOptionPane.INFORMATION_MESSAGE);
-            dispose();
-        } else {
-            JOptionPane.showMessageDialog(this,
-                "Gagal mengupdate user!",
-                "Error",
-                JOptionPane.ERROR_MESSAGE);
+        try {
+            if (User.updateUser(userId, username, namaLengkap, role,
+                    alamat.isEmpty() ? null : alamat,
+                    noTelepon.isEmpty() ? null : noTelepon)) {
+                JOptionPane.showMessageDialog(this,
+                    "✓ User berhasil diupdate!",
+                    "Sukses",
+                    JOptionPane.INFORMATION_MESSAGE);
+                dispose();
+            } else {
+                JOptionPane.showMessageDialog(this,
+                    "Gagal mengupdate user!",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error saat update data user!", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }
