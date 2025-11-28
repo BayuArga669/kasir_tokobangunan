@@ -10,9 +10,9 @@ import javax.swing.JOptionPane;
  */
 public class DatabaseConfig {
     
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/kasir_toko_bangunan";
+    private static final String DB_URL = "jdbc:mysql://localhost:8889/kasir_toko_bangunan";
     private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "";
+    private static final String DB_PASSWORD = "root";
     
     private static Connection connection;
     
