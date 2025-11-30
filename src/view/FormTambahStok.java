@@ -3,6 +3,7 @@ package view;
 import model.*;
 import javax.swing.*;
 import javax.swing.table.*;
+import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.SimpleDateFormat;
@@ -144,6 +145,10 @@ public class FormTambahStok extends JFrame {
         txtJumlah = new JTextField();
         txtJumlah.setPreferredSize(new Dimension(150, 35));
         txtJumlah.setFont(new Font("Arial", Font.PLAIN, 14));
+        
+        // Set document filter untuk hanya menerima input numerik
+        ((AbstractDocument) txtJumlah.getDocument()).setDocumentFilter(new NumericFilter());
+        
         txtJumlah.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
@@ -161,6 +166,10 @@ public class FormTambahStok extends JFrame {
         txtHargaBeli = new JTextField();
         txtHargaBeli.setPreferredSize(new Dimension(150, 35));
         txtHargaBeli.setFont(new Font("Arial", Font.PLAIN, 14));
+        
+        // Set document filter untuk hanya menerima input numerik
+        ((AbstractDocument) txtHargaBeli.getDocument()).setDocumentFilter(new NumericFilter());
+        
         txtHargaBeli.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
@@ -289,6 +298,44 @@ public class FormTambahStok extends JFrame {
         panel.add(scrollPane, BorderLayout.CENTER);
         
         return panel;
+    }
+    
+    // Filter class untuk hanya menerima input numerik
+    private class NumericFilter extends DocumentFilter {
+        @Override
+        public void insertString(FilterBypass fb, int offset, String text, AttributeSet attr) 
+            throws BadLocationException {
+            if (text == null) return;
+            
+            // Hanya izinkan digit dan titik desimal
+            if (isNumeric(text)) {
+                super.insertString(fb, offset, text, attr);
+            }
+        }
+        
+        @Override
+        public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attr) 
+            throws BadLocationException {
+            if (text == null) return;
+            
+            // Hanya izinkan digit dan titik desimal
+            if (isNumeric(text)) {
+                super.replace(fb, offset, length, text, attr);
+            }
+        }
+        
+        private boolean isNumeric(String text) {
+            // Izinkan digit, titik desimal, dan karakter kontrol
+            for (char c : text.toCharArray()) {
+                if (!Character.isDigit(c) && c != '.' && 
+                    c != KeyEvent.VK_BACK_SPACE && 
+                    c != KeyEvent.VK_DELETE && 
+                    c != KeyEvent.VK_ENTER) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
     
     private void loadProduk() {

@@ -2,6 +2,10 @@ package view;
 
 import model.*;
 import javax.swing.*;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.awt.event.*;
 
@@ -12,7 +16,7 @@ class DialogPilihSatuan extends JDialog {
     private FormTransaksi parent;
     private Produk produk;
     private JComboBox<SatuanJual> cmbSatuan;
-    private JTextField txtQty;
+    private JSpinner txtQty;
     private JButton btnTambah, btnBatal;
 
     public DialogPilihSatuan(FormTransaksi parent, Produk produk) {
@@ -55,7 +59,17 @@ class DialogPilihSatuan extends JDialog {
         gbc.gridx = 0; gbc.gridy = 2;
         formPanel.add(new JLabel("Jumlah:"), gbc);
         gbc.gridx = 1;
-        txtQty = new JTextField("1");
+        
+        // Membuat spinner dengan model angka dan step size 1
+        SpinnerNumberModel spinnerModel = new SpinnerNumberModel(1.0, 0.1, 9999.0, 1.0); // Step diubah ke 1.0
+        txtQty = new JSpinner(spinnerModel);
+        txtQty.setPreferredSize(new Dimension(150, 25));
+        
+        // 🔒 FILTER: HANYA ANGKA DIIZINKAN
+        JSpinner.NumberEditor editor = (JSpinner.NumberEditor) txtQty.getEditor();
+        JFormattedTextField textField = editor.getTextField();
+        ((AbstractDocument) textField.getDocument()).setDocumentFilter(new NumericDocumentFilter());
+        
         formPanel.add(txtQty, gbc);
 
         add(formPanel, BorderLayout.CENTER);
@@ -82,14 +96,14 @@ class DialogPilihSatuan extends JDialog {
     private void tambahProduk() {
         try {
             SatuanJual satuan = (SatuanJual) cmbSatuan.getSelectedItem();
-            double qty = Double.parseDouble(txtQty.getText());
+            double qty = (Double) txtQty.getValue();
 
             if (qty <= 0) {
                 JOptionPane.showMessageDialog(this, "Jumlah harus lebih dari 0!", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // Cek stok (opsional, tapi disarankan)
+            // Cek stok
             double stokDiperlukan = qty * satuan.getKonversiKeDasar();
             if (stokDiperlukan > produk.getStokDasar()) {
                 JOptionPane.showMessageDialog(this,
@@ -101,8 +115,45 @@ class DialogPilihSatuan extends JDialog {
             parent.tambahKeKeranjang(produk, satuan, qty);
             dispose();
 
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Format jumlah tidak valid!", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    // ✅ FILTER UNTUK FIELD ANGKA SAJA
+    private class NumericDocumentFilter extends DocumentFilter {
+        @Override
+        public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
+                throws BadLocationException {
+            if (string == null) return;
+            
+            if (isNumeric(string)) {
+                super.insertString(fb, offset, string, attr);
+            }
+        }
+
+        @Override
+        public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                throws BadLocationException {
+            if (text == null) return;
+            
+            if (isNumeric(text)) {
+                super.replace(fb, offset, length, text, attrs);
+            }
+        }
+
+        @Override
+        public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+            super.remove(fb, offset, length);
+        }
+
+        private boolean isNumeric(String str) {
+            for (char c : str.toCharArray()) {
+                if (!Character.isDigit(c) && c != '.') {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

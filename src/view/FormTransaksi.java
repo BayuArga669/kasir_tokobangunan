@@ -856,11 +856,14 @@ public class FormTransaksi extends JFrame {
         }
     }
 
-    // ✅ FILTER UNTUK FIELD ANGKA SAJA
+    // ✅ FILTER UNTUK FIELD ANGKA SAJA - PERBAIKAN
     private class NumericDocumentFilter extends DocumentFilter {
         @Override
         public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
                 throws BadLocationException {
+            if (string == null) return;
+            
+            // Hanya izinkan karakter numerik
             if (isNumeric(string)) {
                 super.insertString(fb, offset, string, attr);
             }
@@ -869,14 +872,29 @@ public class FormTransaksi extends JFrame {
         @Override
         public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
                 throws BadLocationException {
+            if (text == null) return;
+            
+            // Hanya izinkan karakter numerik
             if (isNumeric(text)) {
                 super.replace(fb, offset, length, text, attrs);
             }
         }
 
+        @Override
+        public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+            // Izinkan penghapusan karakter
+            super.remove(fb, offset, length);
+        }
+
         private boolean isNumeric(String str) {
-            if (str == null) return false;
-            return str.matches("\\d*");
+            // Periksa setiap karakter dalam string
+            for (char c : str.toCharArray()) {
+                // Hanya izinkan digit (0-9)
+                if (!Character.isDigit(c)) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
     

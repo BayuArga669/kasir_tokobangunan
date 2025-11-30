@@ -89,7 +89,7 @@ public class KasirDashboard extends JFrame {
         
         add(panelMain);
         
-        // Auto refresh setiap 30 detik
+        // Auto refresh setiap 5 detik (dipercepat dari 30 detik)
         startAutoRefresh();
     }
     
@@ -232,10 +232,10 @@ public class KasirDashboard extends JFrame {
     }
     
     private JPanel createTransaksiButtonPanel() {
-        JPanel panel = new JPanel(new GridLayout(2, 1, 0, 15));
+        JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(245, 247, 250));
         
-        // Card Transaksi
+        // Card Transaksi - Hanya satu tombol transaksi
         JPanel cardTransaksi = createActionCard(
             "TRANSAKSI BARU",
             "Proses penjualan produk",
@@ -244,23 +244,27 @@ public class KasirDashboard extends JFrame {
             e -> openTransaksi()
         );
         
-        // Card Refresh
-        JPanel cardRefresh = createActionCard(
-            "REFRESH DATA",
-            "Perbarui laporan terbaru",
-            new Color(52, 152, 219),
-            "🔄",
-            e -> {
-                loadLaporanHariIni();
-                JOptionPane.showMessageDialog(KasirDashboard.this,
-                    "Data berhasil diperbarui!",
-                    "Informasi",
-                    JOptionPane.INFORMATION_MESSAGE);
-            }
-        );
+        // Info panel - Menampilkan informasi auto-refresh
+        JPanel infoPanel = new JPanel(new BorderLayout());
+        infoPanel.setBackground(Color.WHITE);
+        infoPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(220, 225, 230), 1),
+            BorderFactory.createEmptyBorder(15, 20, 15, 20)
+        ));
         
-        panel.add(cardTransaksi);
-        panel.add(cardRefresh);
+        JLabel infoTitle = new JLabel("📊 Auto-Update");
+        infoTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        infoTitle.setForeground(new Color(40, 50, 60));
+        
+        JLabel infoDesc = new JLabel("<html><body style='width: 250px'>Data transaksi akan diperbarui secara otomatis setiap 5 detik. Tidak perlu refresh manual.</body></html>");
+        infoDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        infoDesc.setForeground(new Color(100, 110, 120));
+        
+        infoPanel.add(infoTitle, BorderLayout.NORTH);
+        infoPanel.add(infoDesc, BorderLayout.CENTER);
+        
+        panel.add(cardTransaksi, BorderLayout.CENTER);
+        panel.add(infoPanel, BorderLayout.SOUTH);
         
         return panel;
     }
@@ -478,8 +482,8 @@ public class KasirDashboard extends JFrame {
     }
     
     private void startAutoRefresh() {
-        // Timer untuk auto refresh setiap 30 detik
-        Timer timer = new Timer(30000, e -> loadLaporanHariIni());
+        // Timer untuk auto refresh setiap 5 detik (dipercepat dari 30 detik)
+        Timer timer = new Timer(5000, e -> loadLaporanHariIni());
         timer.start();
     }
     
@@ -528,9 +532,17 @@ public class KasirDashboard extends JFrame {
     
     // Menu Actions
     private void openTransaksi() {
-        new FormTransaksi(this, currentUser).setVisible(true);
-        // Refresh data setelah transaksi ditutup
-        loadLaporanHariIni();
+        FormTransaksi formTransaksi = new FormTransaksi(this, currentUser);
+        formTransaksi.setVisible(true);
+        
+        // Tambahkan WindowListener untuk memperbarui data saat FormTransaksi ditutup
+        formTransaksi.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent e) {
+                // Refresh data saat FormTransaksi ditutup
+                loadLaporanHariIni();
+            }
+        });
     }
     
 //    private void openRiwayatTransaksiKasir() {
